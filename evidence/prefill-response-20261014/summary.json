@@ -1,0 +1,89 @@
+{
+  "passed_correctness": true,
+  "model": "Qwen3-0.6B pinned MNN quantized model",
+  "backend": "Android ARM64 CPU FP16 lowmem threads4 chunk32 attention8 dynamic0 no mmap",
+  "native_processes": 2,
+  "actual_responses": 14,
+  "actual_forwards": 128,
+  "actual_attention_boundary_records": 7168,
+  "full_logits_pairs": 59,
+  "floats_per_pair": 151936,
+  "all_pairs_finite_and_byte_identical": true,
+  "baseline_head_calls": 64,
+  "candidate_head_calls": 59,
+  "candidate_trunk_calls": 5,
+  "source_entries": [
+    "Llm::response(token IDs)",
+    "Llm::response(string)"
+  ],
+  "cases": [
+    {
+      "name": "prefix31",
+      "status": "max_tokens_finished",
+      "eos": false,
+      "steps": 3
+    },
+    {
+      "name": "prefix32",
+      "status": "max_tokens_finished",
+      "eos": false,
+      "steps": 3
+    },
+    {
+      "name": "prefix33",
+      "status": "max_tokens_finished",
+      "eos": false,
+      "steps": 4
+    },
+    {
+      "name": "prefix64",
+      "status": "max_tokens_finished",
+      "eos": false,
+      "steps": 4
+    },
+    {
+      "name": "prefix65",
+      "status": "max_tokens_finished",
+      "eos": false,
+      "steps": 5
+    },
+    {
+      "name": "text_short",
+      "status": "normal_finished",
+      "eos": true,
+      "steps": 11
+    },
+    {
+      "name": "text_long",
+      "status": "max_tokens_finished",
+      "eos": false,
+      "steps": 34
+    }
+  ],
+  "greedy_output_ids_text_status_positions_reset_verified": true,
+  "coherent_negative_checks": [
+    {
+      "case": "f32_consistent_remote_local_sha",
+      "binding_exit": 0,
+      "numeric_exit": 1,
+      "rejection": "complete logits tolerance exceeded"
+    },
+    {
+      "case": "fake_chunk_consistent_28KV_context_positions_next_reset",
+      "binding_exit": 0,
+      "numeric_exit": 1,
+      "rejection": "outer chunk role or length differs from plan"
+    }
+  ],
+  "source_patch_apply_verified_files": 5,
+  "raw_current_device_evidence_in_public_repo": false,
+  "default_phone_chat_switched": false,
+  "performance_verified": false,
+  "unverified": [
+    "unsupported configs",
+    "reload/fault/concurrency",
+    "persistent trunk lifecycle",
+    "no-trace performance and additional memory",
+    "prompt/reuse/disk cache/multimodal"
+  ]
+}
