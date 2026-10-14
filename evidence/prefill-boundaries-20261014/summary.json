@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "case_count": 6,
+  "actual_routes": 12,
+  "fixed_forward_steps": 40,
+  "logits_pairs": 14,
+  "finite_float_pairs": 2127104,
+  "all_byte_identical": true,
+  "max_abs_error": 0.0,
+  "actual_attention_boundary_records": 2240,
+  "reader_sha256": "71c6b42d47f2e81db4af436800cc8df874014b8a01bf7ec1b681944e0b4e6a56",
+  "frozen_reader_sha256": "71c6b42d47f2e81db4af436800cc8df874014b8a01bf7ec1b681944e0b4e6a56",
+  "model_replay": false,
+  "actual_full_steps": 34,
+  "actual_trunk_steps": 6,
+  "actual_head_calls": 34,
+  "scope": "Fixed input boundary/retained-KV prototype only; no formal chat, sampling, or performance acceptance",
+  "baseline_head_calls": 20,
+  "candidate_head_calls": 14,
+  "raw_boundary_evidence_in_public_repo": false,
+  "cases": [
+    "prefix31",
+    "prefix32",
+    "prefix33",
+    "prefix64",
+    "prefix65",
+    "continuous64_suffix33"
+  ]
+}

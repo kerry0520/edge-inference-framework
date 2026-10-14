@@ -54,7 +54,7 @@ python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 
 自然回答一致、完整词表 logits 一致、KV 状态一致、调用次数减少和性能改善是不同的验收条件。探针会改变运行开销；并行区域 wall 时间也包含调度和等待，不能称为纯 kernel 时间。
 
-非末 prefill 省略 head 的关键是保留所有层的 KV 更新，同时保证主干与完整计划共享同一份状态；不能简单跳过整个 forward 或只取消读取 logits。整除末块、多轮、正式生成和无探针性能需要后续独立验证。
+非末 prefill 省略 head 的关键是保留所有层的 KV 更新，同时保证主干与完整计划共享同一份状态；不能简单跳过整个 forward 或只取消读取 logits。31/32/33/64/65及固定ID连续KV边界已通过完整logits/状态审核；正式文本多轮、生成流程和无探针性能仍需独立验证。
 
 ## 第三方来源
 
@@ -65,3 +65,5 @@ python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 部分历史文档链接指向本机原始工程记录；本次公开快照未复制这些个人路径和完整历史日志。
 
 本次执行计划原型的学习说明：[非末 prefill 词表投影省略](docs/Android非末prefill词表投影省略-20261014.md)。
+
+边界阶段：[为什么满块不等于中间块](docs/Android分块prefill边界与KV连续性-20261014.md)，[派生简结与范围](evidence/prefill-boundaries-20261014/README.md)。
