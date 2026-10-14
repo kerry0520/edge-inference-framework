@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "model_replay": false,
+  "routes": 2,
+  "steps": 10,
+  "actual_attention_boundary_records": 560,
+  "logits_pairs": [
+    {
+      "baseline_sha256": "36057c812ee2ee45e81759f4c498e4d210e2b4bf845679c6560c42c0812eeb5f",
+      "candidate_sha256": "36057c812ee2ee45e81759f4c498e4d210e2b4bf845679c6560c42c0812eeb5f",
+      "float_matches": 151936,
+      "max_abs_error": 0.0,
+      "rms_error": 0.0,
+      "byte_identical": true
+    },
+    {
+      "baseline_sha256": "0f595b985f0a24aba0f46f3e180e126af1cc2777d262b8ddc7e4f4dd0d919a40",
+      "candidate_sha256": "0f595b985f0a24aba0f46f3e180e126af1cc2777d262b8ddc7e4f4dd0d919a40",
+      "float_matches": 151936,
+      "max_abs_error": 0.0,
+      "rms_error": 0.0,
+      "byte_identical": true
+    },
+    {
+      "baseline_sha256": "bd4af17f134bc0d0315ae9ffb5f1d1ab0a49c89313fb71ba5843fd3c663008f6",
+      "candidate_sha256": "bd4af17f134bc0d0315ae9ffb5f1d1ab0a49c89313fb71ba5843fd3c663008f6",
+      "float_matches": 151936,
+      "max_abs_error": 0.0,
+      "rms_error": 0.0,
+      "byte_identical": true
+    }
+  ],
+  "atol": 0.0001,
+  "rtol": 0.0001
+}

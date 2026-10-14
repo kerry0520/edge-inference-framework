@@ -1,0 +1,68 @@
+# Android项目快速开始
+
+这个项目现在能让你从电脑向手机上的Qwen3-0.6B提问、流式看回答，并连续聊天。模型运算在手机ARM64 CPU上执行；电脑负责输入、显示和记录。交付形式是Python聊天入口、C++手机worker、固定MNN构建与可复核实机证据，目前没有Android图形App。
+
+## 在已配置的电脑上玩
+
+在项目目录打开PowerShell。手机打开无线调试，与电脑处于可互通的网络，且已经完成ADB配对，然后运行：
+
+```powershell
+python scripts/android/phone_chat.py --stats --mode kv
+```
+
+看到“模型已加载”和“问题>”后，输入一行问题并回车。首次启动包含连接、部署检查与模型加载；显示的每轮请求统计不包含模型加载时间。入口会自动寻找已记录、已配对的手机；必要时也可通过`--serial IP:连接端口`指定当前ADB连接地址，连接端口不是配对端口。
+
+| 输入 | 作用 |
+|---|---|
+| 普通一行文字 | 发送新问题，接收流式回答，成功确认后提交聊天历史 |
+| `/history` | 查看本地已确认的消息历史 |
+| `/stats` | 重显最近成功请求的统计，不再次推理 |
+| `/new` | 等待手机确认清空当前对话；最近成功请求统计仍是历史快照 |
+| `/exit` | 正常结束当前模型会话并保存记录 |
+
+预算拒绝不会提交新历史或新成功统计；可以换短问题继续。发生连接中断或请求结果未确认时，当前会话结束并保存未知记录，不自动重发。下次启动是新会话，不会自动恢复旧聊天。
+
+只想问一次，也可以：
+
+```powershell
+python scripts/android/phone_chat.py --stats --mode kv --prompt "2+10等于几？"
+```
+
+默认每题最多生成64个token；想看长回答可加`--max-new-tokens 128`。`--max-context-tokens`默认2048，是本入口的输入加生成预算，不代表模型原生最大上下文。提高预算并不代表已经完成相应长上下文验收。
+
+## full与kv怎样选
+
+`--mode kv`使用固定32-token分块的跨轮KV复用；只有与当前模板重新编码的输入一致、满足保留规则的完整块才复用。首轮或前缀不足32时，复用数可以是0。
+
+省略`--mode kv`就是默认full：每轮完整历史重算。它使用原有chunk0配置，**不是**性能实验中同chunk32的完整重算对照。当前的“7组结果一致”与续轮省时结论来自实验用Full32StatsSession对照KV32，不能直接改写成默认full与kv在任何问题上都等价。
+
+`--stats`显示输入如何分成prefill和复用位置、生成token数、MNN原生阶段时间，以及电脑接收首段文字的等待。后者包含传输和接收处理，是用户开始收到文字的指标，不是模型内部首token时间，也不是屏幕刷新时间。客户端请求区间包含接收阶段记录和final校验，在最终提交记录落盘之前结束。`/new`后看到旧统计不表示缓存没有清空，它明确属于最近成功请求。
+
+`query`是以前的候选实验入口，不属于本次full/kv交付主线，也不能使用`--stats`。
+
+## 新电脑需要哪些东西
+
+源码审阅包可以解压、读代码、核对已有证据，**不能直接独立运行手机模型**。运行入口仍依赖以下已匹配资源：
+
+| 依赖 | 当前项目要求与入口 |
+|---|---|
+| Python | 本机使用Python 3.11；聊天与公开证据reader使用标准库 |
+| ADB与配对 | `tools/android/platform-tools/adb.exe`；当前验收设备Mi11（M2011K2C）ARM64，自动发现有固定身份检查 |
+| 手机模型 | `/data/local/tmp/MNN/Qwen3-0.6B-MNN-modelscope`中的`llm.mnn`、`llm.mnn.weight`、`llm_config.json`、`tokenizer.txt`、`tokenizer-android-lf.txt`；文件身份保存于正式session的model_before/model_after |
+| 统计worker | `build/chat-metrics-20261012/worker-build-v2/{full_worker,kv_worker,full32_worker}`及`results/android/chat-metrics-20261012/worker-build-v2/*-build.json`；日常只用full或kv，full32是实验对照 |
+| 固定框架 | MNN 3.6.1提交`d407447ed56c4121a11ccbd266dc184ca1ead0c2`，匹配已验收base/guard静态库；不能仅换任意新版MNN库 |
+| 重建工具 | Android NDK r30的ARM64/API24编译器、固定源码checkout、匹配静态库、先前构建manifest和本机ASCII路径别名 |
+
+`scripts/android/build_chat_metrics.py`能根据`results/android/chat-session-20261007/build.json`的已有编译参数，重新构建三个统计worker，并核对base/guard库和固定源码身份。应使用新的`--record-tag`保留新构建证据。它**不会重建框架静态库、安装工具链或下载模型**，也不是一条适用于任意电脑的安装命令；不传构建选择参数仍读取worker-build-v2；新构建可用`--stats-build-tag TAG`显式选择，无需编辑Python路径。选择器核实际worker与构建记录，并保存本次profile；构建TAG应匹配新record-tag并重新验收。
+
+现有构建和部署脚本用于本项目已配置环境，尚未交付新机器的一键安装、通用Android设备适配或APK。使用其他设备/模型/后端时，需要单独准备与验证。
+
+## 学习只看三个入口
+
+1. [连续复习](端侧推理框架连续复习.md)：正文讲希望你理解的职责与原理，从真实手机请求接到MNN执行链。
+2. [学习台账](推理框架学习台账.md)：区分工程已完成、已经讲过和理解待反馈。
+3. [交付与复现指南](端侧推理框架交付与复现指南.md)：定位模型请求如何经过LLM、Module、Session/Pipeline和Execution；需要查工程证据时再沿链接深入。
+
+你当前要抓住的关系是：消息先编码成token，LLM决定这轮哪些位置要算，MNN执行相应张量运算，再生成和返回文字。跨轮KV减少的是要重新输入的计算位置，并没有绕过MNN模型执行链。
+
+2026-10-13新增[统计worker构建选择](Android统计worker构建选择-20261013.md)：例如`python scripts/android/phone_chat.py --stats --mode kv --stats-build-tag worker-choice-20261013-v1`。只改变所选worker构建，不更换模型；仅支持stats full/kv。旧V3ZIP仍冻结在上一版本，新代码与4新实机证据另存Git。

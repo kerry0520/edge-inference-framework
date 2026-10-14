@@ -1,0 +1,16 @@
+/build/
+/models/
+/tools/
+/artifacts/
+/results/
+/tmp/
+__pycache__/
+*.pyc
+*.obj
+*.o
+*.a
+*.so
+*.exe
+*.f32
+*.bin
+.env
