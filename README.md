@@ -13,7 +13,7 @@
 - 实际算子、W4/W8 计算路径和执行准备/并行区域观察。
 - 实验原型：非末 prefill 块以 `hidden_states` 为输出，保留全部 Transformer/Attention，省掉词表投影。
 
-**执行计划优化状态（2026-10-14）**：固定输入、分块边界及KV连续性验证后，隔离候选已经贯通真实 `Llm::response`。14次请求覆盖五个长度边界、短长文字和同实例reset；实际中间块执行主干，head64→59。59对完整词表分数逐字节一致，生成token/文字/状态与基线相同。默认电脑聊天入口尚未切换候选库；未验证速度、额外内存、reload/故障或其他模型配置。
+**执行计划优化状态（2026-10-14）**：固定输入、分块边界及KV连续性验证后，隔离候选已经贯通真实 `Llm::response`。14次请求覆盖五个长度边界、短长文字和同实例reset；实际中间块执行主干，head64→59。59对完整词表分数逐字节一致，生成token/文字/状态与基线相同。默认电脑聊天入口尚未切换候选库；后续有限成本对照中，512-token合成输入的四组ABBA都更快，配对改善比例中位7.53%；33/128无稳定收益，候选采样峰值RSS略高。reload/故障、持久计划与其他配置尚未验证，不能普遍默认开启。
 
 ## 主要入口
 
@@ -56,7 +56,7 @@ python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 
 自然回答一致、完整词表 logits 一致、KV 状态一致、调用次数减少和性能改善是不同的验收条件。探针会改变运行开销；并行区域 wall 时间也包含调度和等待，不能称为纯 kernel 时间。
 
-非末 prefill 省略 head 的关键是保留所有层的 KV 更新，同时保证主干与完整计划共享同一份状态；不能简单跳过整个 forward 或只取消读取 logits。31/32/33/64/65及固定ID连续KV边界已通过完整logits/状态审核；正式response的隔离生成流程已验证；跨轮模板复用、默认入口分发和无探针性能仍需独立验证。
+非末 prefill 省略 head 的关键是保留所有层的 KV 更新，同时保证主干与完整计划共享同一份状态；不能简单跳过整个 forward 或只取消读取 logits。31/32/33/64/65及固定ID连续KV边界已通过完整logits/状态审核；正式response的隔离生成流程已验证；跨轮模板复用、默认入口分发、持久计划和更多配置仍需验证；已完成去逐层日志的有限成本对照。
 
 ## 第三方来源
 
@@ -71,3 +71,5 @@ python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 边界阶段：[为什么满块不等于中间块](docs/Android分块prefill边界与KV连续性-20261014.md)，[派生简结与范围](evidence/prefill-boundaries-20261014/README.md)。
 
 正式response阶段：[生成流程怎样传递输出需求](docs/Android生成流程的输出需求-20261014.md)，[简结及未验证范围](evidence/prefill-response-20261014/README.md)。
+
+请求成本阶段：[优化成本与请求用时](docs/Android优化成本与请求用时-20261014.md)，[48条测量及离线复算](evidence/prefill-cost-20261014/README.md)。

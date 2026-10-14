@@ -1,0 +1,153 @@
+{
+  "passed_cost_scope": true,
+  "total_requests": 62,
+  "performance_measurements": 48,
+  "abba_blocks": 12,
+  "performance_by_input_length": {
+    "33": {
+      "abba_blocks": [
+        {
+          "block": 0,
+          "baseline_mean_us": 326729,
+          "candidate_mean_us": 332031.5,
+          "candidate_minus_baseline_us": 5302.5,
+          "improvement_percent": -1.622904609018483
+        },
+        {
+          "block": 1,
+          "baseline_mean_us": 334646,
+          "candidate_mean_us": 338382.5,
+          "candidate_minus_baseline_us": 3736.5,
+          "improvement_percent": -1.1165530142299624
+        },
+        {
+          "block": 2,
+          "baseline_mean_us": 340595.5,
+          "candidate_mean_us": 344615.5,
+          "candidate_minus_baseline_us": 4020.0,
+          "improvement_percent": -1.180285705477612
+        },
+        {
+          "block": 3,
+          "baseline_mean_us": 348228.5,
+          "candidate_mean_us": 347326,
+          "candidate_minus_baseline_us": -902.5,
+          "improvement_percent": 0.2591689077717648
+        }
+      ],
+      "paired_difference_median_us": 3878.25,
+      "paired_difference_range_us": [
+        -902.5,
+        5302.5
+      ],
+      "paired_improvement_median_percent": -1.1484193598537873,
+      "paired_prefill_difference_median_us": -12430.5,
+      "unpaired_sample_medians_improvement_percent": -0.9615498478335524,
+      "candidate_prepare_median_us": 10865.0,
+      "candidate_check_median_us": 988.5,
+      "candidate_release_median_us": 5649.0
+    },
+    "128": {
+      "abba_blocks": [
+        {
+          "block": 0,
+          "baseline_mean_us": 766348,
+          "candidate_mean_us": 725005,
+          "candidate_minus_baseline_us": -41343,
+          "improvement_percent": 5.394807580890144
+        },
+        {
+          "block": 1,
+          "baseline_mean_us": 725582.5,
+          "candidate_mean_us": 729582,
+          "candidate_minus_baseline_us": 3999.5,
+          "improvement_percent": -0.5512123018402456
+        },
+        {
+          "block": 2,
+          "baseline_mean_us": 725939,
+          "candidate_mean_us": 899684.5,
+          "candidate_minus_baseline_us": 173745.5,
+          "improvement_percent": -23.933898027244712
+        },
+        {
+          "block": 3,
+          "baseline_mean_us": 734623.5,
+          "candidate_mean_us": 737610.5,
+          "candidate_minus_baseline_us": 2987.0,
+          "improvement_percent": -0.4066028380524173
+        }
+      ],
+      "paired_difference_median_us": 3493.25,
+      "paired_difference_range_us": [
+        -41343,
+        173745.5
+      ],
+      "paired_improvement_median_percent": -0.47890756994633144,
+      "paired_prefill_difference_median_us": -15462.0,
+      "unpaired_sample_medians_improvement_percent": -0.6092923792038837,
+      "candidate_prepare_median_us": 11326.0,
+      "candidate_check_median_us": 999.0,
+      "candidate_release_median_us": 5504.5
+    },
+    "512": {
+      "abba_blocks": [
+        {
+          "block": 0,
+          "baseline_mean_us": 2649471,
+          "candidate_mean_us": 2542502,
+          "candidate_minus_baseline_us": -106969,
+          "improvement_percent": 4.037371988596969
+        },
+        {
+          "block": 1,
+          "baseline_mean_us": 2677987.5,
+          "candidate_mean_us": 2574064.5,
+          "candidate_minus_baseline_us": -103923.0,
+          "improvement_percent": 3.8806379790794394
+        },
+        {
+          "block": 2,
+          "baseline_mean_us": 2964064,
+          "candidate_mean_us": 2637470,
+          "candidate_minus_baseline_us": -326594,
+          "improvement_percent": 11.018453042849277
+        },
+        {
+          "block": 3,
+          "baseline_mean_us": 2972358.5,
+          "candidate_mean_us": 2635449,
+          "candidate_minus_baseline_us": -336909.5,
+          "improvement_percent": 11.334753193465728
+        }
+      ],
+      "paired_difference_median_us": -216781.5,
+      "paired_difference_range_us": [
+        -336909.5,
+        -103923.0
+      ],
+      "paired_improvement_median_percent": 7.5279125157231235,
+      "paired_prefill_difference_median_us": -244787.75,
+      "unpaired_sample_medians_improvement_percent": 4.433909049742111,
+      "candidate_prepare_median_us": 11855.0,
+      "candidate_check_median_us": 1199.5,
+      "candidate_release_median_us": 5601.5
+    }
+  },
+  "sample_peak_rss_candidate_minus_baseline_mib": {
+    "cold": 5.6796875,
+    "warm": 10.15234375
+  },
+  "default_phone_chat_switched": false,
+  "universal_speedup_claim": false,
+  "new_full_logits_validation": false,
+  "rss_sampling_in_performance": false,
+  "source_semantics_and_v5_natural_gate_verified": true,
+  "limitations": [
+    "four ABBA blocks per length",
+    "synthetic prompts",
+    "request-local plan rebuilt",
+    "HWM peaked during model load",
+    "sampling peak is approximate"
+  ]
+}
