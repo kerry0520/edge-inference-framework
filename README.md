@@ -63,3 +63,5 @@ python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 公开数值样例：`python evidence/verify_logits.py`。它只复查完整 logits 的字节与有限性，不替代设备执行/KV 状态审核；说明见 `evidence/README.md`。
 
 部分历史文档链接指向本机原始工程记录；本次公开快照未复制这些个人路径和完整历史日志。
+
+本次执行计划原型的学习说明：[非末 prefill 词表投影省略](docs/Android非末prefill词表投影省略-20261014.md)。
