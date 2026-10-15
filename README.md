@@ -93,3 +93,7 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 新增独立配方：固定MNN提交与项目补丁、本地NDK/KleidiAI、全新对象目录，完整重建CPU静态库并链接聊天worker。565实际对象与565归档成员对应，固定手机三组新旧生成回归一致，旧运行入口保持已验版本。新构建目前是显式实验候选；尚未验收新电脑或其他设备，也无新性能声明。
 
 见[构建步骤](configs/android/mnn-source-build/README.md)、[职责讲解](docs/Android从源码到手机程序-20261015.md)和[精简验收](evidence/clean-source-build-20261015/README.md)。源码仓库不分发模型、工具链、静态库或原生程序。
+
+## 源码构建产物接入运行包
+
+此前固定源码构建已接入显式可选source profile，并完成独立正式客户端的三轮手机生成对照。旧运行包保持兼容；默认入口不变。见[使用与职责](docs/Android源码构建运行包-20261016.md)及[精简验收范围](evidence/source-runtime-bundle-20261016/README.md)。仍不声称其他设备或新电脑的全量验收。

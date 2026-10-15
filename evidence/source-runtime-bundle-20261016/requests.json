@@ -1,0 +1,58 @@
+{
+  "profile_id": "mi11-qwen3-06b-source-plan-v1",
+  "cli_exit": 0,
+  "native_exit": 0,
+  "launcher_exit": 0,
+  "collector_exit": 1,
+  "recovered_files": 41,
+  "no_model_replay": true,
+  "requests": [
+    {
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "input_ids_sha256": "cc032844aae4a524160b2c81f0e3d6f2d089e1aaeadfc1f44f80966d75e7cfdc",
+      "output_ids_sha256": "b64be5d8a70cf8e6f74e1935f715c45837b3fa30b54f7b5d1cbdcd951d99ccbd",
+      "text_sha256": "f406b51fcbe00b81b609b43238918696d2e52882d8c234274ddc82c4f904566f",
+      "status": "max_tokens_finished",
+      "prior_candidate_equal": true,
+      "plan": {
+        "cache_hit": false,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    },
+    {
+      "input_tokens": 80,
+      "output_tokens": 8,
+      "input_ids_sha256": "66f9e0f07c964fd421243b5b523bbe151ad495c609d2ffd3d962a1b8b7bdc100",
+      "output_ids_sha256": "30e0cbaddde1d77009008035fd85fc90c81638d626ea993a6f39da20efdef72c",
+      "text_sha256": "37f07e4c48f83a4f9bbdba58ff5fd9d0b70c2a470e623297035c408fc0505fb2",
+      "status": "max_tokens_finished",
+      "prior_candidate_equal": true,
+      "plan": {
+        "cache_hit": true,
+        "trunk_count": 2,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    },
+    {
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "input_ids_sha256": "cc032844aae4a524160b2c81f0e3d6f2d089e1aaeadfc1f44f80966d75e7cfdc",
+      "output_ids_sha256": "b64be5d8a70cf8e6f74e1935f715c45837b3fa30b54f7b5d1cbdcd951d99ccbd",
+      "text_sha256": "f406b51fcbe00b81b609b43238918696d2e52882d8c234274ddc82c4f904566f",
+      "status": "max_tokens_finished",
+      "prior_candidate_equal": true,
+      "plan": {
+        "cache_hit": true,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    }
+  ],
+  "source_sha256": "a8fd350d9273402a01aa7d8a603428c38d5d556f8f738869f5ce485e1378903c",
+  "private_session_sha256": "b6871585f9b3f69578b877780ccf38912eeafe4cc434898d824c27eb70f62381"
+}

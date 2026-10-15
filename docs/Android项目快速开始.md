@@ -91,3 +91,13 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ```
 
 导出目录必须尚不存在，包包含约87MiB程序，不含手机模型或ADB；可用`--adb-path`显式指定ADB文件。当前仍限定同一已验手机与模型，不代表任意新设备适配。固定手机上的实机搬移对照和独立客户端提问已通过；尚未验收新电脑或其他手机。详见[运行包与构建依赖](Android运行包与构建依赖-20261015.md)。
+
+## 可选：使用完整源码重建后的新运行包（2026-10-16）
+
+本机已有已验新包，可直接启动：
+
+```powershell
+python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --plan-profile "build/source-runtime-bundle-20261016/手机运行包 空格/profile.json"
+```
+
+固定手机三轮正式CLI验证通过，旧包仍受支持。新包不随公开仓库分发，export-source当前只支持本项目明确纳入的一组已验构建及对应证据。详见[源码构建运行包](Android源码构建运行包-20261016.md)。

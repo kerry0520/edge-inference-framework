@@ -1,4 +1,4 @@
-"""Export and verify the single accepted, local-only mobile runtime bundle."""
+"""Export and verify fixed accepted, local-only mobile runtime bundles."""
 import argparse
 import hashlib
 import json
@@ -15,6 +15,24 @@ IDENTITY = {
     "library_sha256": "7d6147a6c41af78572ba4704c83a4c719aba01cc43c5661721e252c9213291fa",
     "performance_manifest_sha256": "9ec358d77206aaa83022922481b2814bd165743d200e840ed975b3842d8d174c",
 }
+SOURCE_PROFILE_ID = "mi11-qwen3-06b-source-plan-v1"
+SOURCE_IDENTITY = {
+    "source_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2",
+    "source_sha256": "bbec551047e4d58690e03d4d48b525371e7a6a06dc6d49cd314fa88c80788b1a",
+    "helper_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+    "binary_sha256": "2cc76982280e6607fdbef1e37c9de0511a9f898efd43133de6268380093dd959",
+    "library_sha256": "5b9d239bdf841558614f29bb2657ebc378b75cd7dda08835fddeaf852022f257",
+    "source_build_manifest_sha256": "b555d47abb97bca825c613795ecffb6386aa7e238be5f7bd02dcbcbb6db93a36",
+    "build_review_sha256": "b732798921181dd604c7f3911ba5610733d71b0aa99d2e7284b02151b5136157",
+    "generation_review_sha256": "8393fb0aef4b474e7d5286aa8fe72f003374f784c769034dbc5e38f40d152135",
+}
+SOURCE_EVIDENCE = {
+    "build-review-v4/build-review.json": "b732798921181dd604c7f3911ba5610733d71b0aa99d2e7284b02151b5136157",
+    "root-phone-acceptance-v1.json": "8393fb0aef4b474e7d5286aa8fe72f003374f784c769034dbc5e38f40d152135",
+    "recipe-v1/link-fix-v1/build.json": "b555d47abb97bca825c613795ecffb6386aa7e238be5f7bd02dcbcbb6db93a36",
+}
+SOURCE_STAGE = "results/android/clean-source-build-20261015"
+SOURCE_MANIFEST = "recipe-v1/link-fix-v1/build.json"
 FILES = {"binary": "phone_chat_plan_worker", "worker": "phone_chat_plan_worker.cpp",
          "helper": "prefill_trunk_reuse.hpp", "runtime_build": "runtime-build.json",
          "provenance": "provenance.json"}
@@ -38,18 +56,36 @@ def _equal(actual, expected, label):
         raise ValueError("运行包身份不匹配: " + label)
 
 
-def profile_document():
-    return {"schema_version": 1, "profile_id": PROFILE_ID, "identity": dict(IDENTITY),
+def _identity(profile_id=None):
+    if profile_id is None or profile_id == PROFILE_ID:
+        return PROFILE_ID, IDENTITY
+    if profile_id == SOURCE_PROFILE_ID:
+        return SOURCE_PROFILE_ID, SOURCE_IDENTITY
+    raise ValueError("未知运行包profile_id")
+
+
+def profile_document(profile_id=None):
+    profile_id, identity = _identity(profile_id)
+    return {"schema_version": 1, "profile_id": profile_id, "identity": dict(identity),
             "files": dict(FILES), "limits": dict(LIMITS)}
 
 
-def runtime_document():
-    return {"schema_version": 1, "profile_id": PROFILE_ID, **IDENTITY,
+def runtime_document(profile_id=None):
+    profile_id, identity = _identity(profile_id)
+    return {"schema_version": 1, "profile_id": profile_id, **identity,
             "variant": "full_plan", "diagnostic": False, "plan_cache_version": 1,
             "metrics_version": 1, "chunk": 32}
 
 
-def provenance_document():
+def provenance_document(profile_id=None):
+    selected, identity = _identity(profile_id)
+    if selected == SOURCE_PROFILE_ID:
+        return {"schema_version": 1, "profile_id": selected, "identity": dict(identity),
+                "accepted_stage": "clean-source-build-20261015/recipe-v1/link-fix-v1",
+                "library_stage": "clean-source-build-20261015/build-review-v4",
+                "scope": "accepted source-built runtime export; fixed phone/model; no new performance or full-logits claim",
+                "export_requires": "pinned build review, phone acceptance and final manifest; actual source-build assets",
+                "evidence_sha256": dict(SOURCE_EVIDENCE)}
     return {"schema_version": 1, "profile_id": PROFILE_ID, "identity": dict(IDENTITY),
             "accepted_stage": "plan-cache-chat-20261015/build-v2",
             "library_stage": "prefill-trunk-reuse-20261014/performance-build-v3",
@@ -71,7 +107,11 @@ def resolve_profile(profile_path):
         if not path.is_file():
             raise ValueError("运行包profile必须是文件")
         base = path.parent
-        _equal(_read(path), profile_document(), "profile")
+        document = _read(path)
+        if not isinstance(document, dict) or "profile_id" not in document:
+            raise ValueError("运行包缺少profile_id")
+        selected, identity = _identity(document["profile_id"])
+        _equal(document, profile_document(selected), "profile")
         paths = {}
         for role, relative in FILES.items():
             entry = base / relative
@@ -81,15 +121,15 @@ def resolve_profile(profile_path):
             paths[role] = resolved
         for role, key in (("binary", "binary_sha256"), ("worker", "source_sha256"),
                           ("helper", "helper_sha256")):
-            if sha(paths[role]) != IDENTITY[key]:
+            if sha(paths[role]) != identity[key]:
                 raise ValueError("运行包文件身份不匹配: " + role)
-        _equal(_read(paths["runtime_build"]), runtime_document(), "runtime-build")
-        _equal(_read(paths["provenance"]), provenance_document(), "provenance")
-        return {**IDENTITY, "manifest_sha256": sha(paths["runtime_build"]),
+        _equal(_read(paths["runtime_build"]), runtime_document(selected), "runtime-build")
+        _equal(_read(paths["provenance"]), provenance_document(selected), "provenance")
+        return {**identity, "manifest_sha256": sha(paths["runtime_build"]),
                 "binary_path": str(paths["binary"]), "manifest_path": str(paths["runtime_build"]),
                 "worker_source_path": str(paths["worker"]), "helper_path": str(paths["helper"]),
                 "profile_path": str(path), "profile_sha256": sha(path), "bundle_root": str(base),
-                "provenance_sha256": sha(paths["provenance"]), "profile_id": PROFILE_ID,
+                "provenance_sha256": sha(paths["provenance"]), "profile_id": selected,
                 "client_sha256": sha(__file__)}
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
         raise ValueError("运行包缺失或非法: " + str(error)) from error
@@ -142,17 +182,121 @@ def export_bundle(output, root=None):
     return result
 
 
+def resolve_source_build(source_build, root=None):
+    """Export-time gate for one reviewed source build, never a runtime dependency.
+
+    Evidence hashes are pinned in this client, rather than trusted from the
+    supplied manifest. Semantic checks remain explicit to document acceptance.
+    No compilation, deployment, or model request is performed here.
+    """
+    root = Path(ROOT if root is None else root).resolve()
+    stage = root / SOURCE_STAGE
+    supplied = Path(source_build).expanduser().absolute()
+    if supplied.is_symlink() or supplied.resolve(strict=True) != (stage / SOURCE_MANIFEST).resolve(strict=True):
+        raise ValueError("不是受验的source-build最终manifest")
+    documents = {}
+    hashes = {}
+    for relative, expected in SOURCE_EVIDENCE.items():
+        path = stage / relative
+        if path.is_symlink() or not path.resolve(strict=True).is_relative_to(stage.resolve(strict=True)):
+            raise ValueError("source-build证据越界: " + relative)
+        hashes[relative] = sha(path)
+        if hashes[relative] != expected:
+            raise ValueError("source-build证据身份不匹配: " + relative)
+        documents[relative] = _read(path)
+    review = documents["build-review-v4/build-review.json"]
+    phone = documents["root-phone-acceptance-v1.json"]
+    manifest = documents[SOURCE_MANIFEST]
+    for key, actual in (("source_build_manifest_sha256", hashes[SOURCE_MANIFEST]),
+                        ("build_review_sha256", hashes["build-review-v4/build-review.json"]),
+                        ("generation_review_sha256", hashes["root-phone-acceptance-v1.json"])):
+        _equal(actual, SOURCE_IDENTITY[key], key)
+    _equal(review.get("accepted"), True, "source-build accepted")
+    checks = review.get("checks")
+    if not isinstance(checks, dict) or not checks or any(value is not True for value in checks.values()):
+        raise ValueError("source-build完整审核未通过")
+    for key, expected in (("actual_compiled_object_count", 565), ("archive_member_count", 565),
+                          ("kleidi_actual_object_count", 101)):
+        _equal(review.get(key), expected, key)
+    for key in ("binary_sha256", "library_sha256"):
+        _equal(review.get(key), SOURCE_IDENTITY[key], key)
+    for key, expected in (("accepted", True), ("matched_pairs", 3), ("successful_requests", 6),
+                          ("native_processes", 2), ("actual_forwards", 62), ("full", 54),
+                          ("trunk", 8), ("decode_included_in_full", 48)):
+        _equal(phone.get(key), expected, "phone acceptance " + key)
+    for key in ("source_commit", "binary_sha256", "library_sha256", "source_sha256", "helper_sha256"):
+        _equal(manifest.get(key), SOURCE_IDENTITY[key], "source manifest " + key)
+    for key, expected in (("actual_exit", 0), ("exit", 0), ("core_build_actual_exit", 0),
+                          ("link_actual_exit", 0), ("core_library_built_from_fresh_objects", True),
+                          ("original_failed_link_preserved", True), ("variant", "full_plan"),
+                          ("chunk", 32), ("metrics_version", 1), ("plan_cache_version", 1),
+                          ("diagnostic", False), ("source_path", "apps/android/phone_chat_plan_worker.cpp"),
+                          ("helper_path", "apps/android/prefill_trunk_reuse.hpp")):
+        _equal(manifest.get(key), expected, "source manifest " + key)
+    inputs = {"binary": Path(manifest["binary_path"]),
+              "library": Path(manifest["library_path"]),
+              "worker": root / "apps/android/phone_chat_plan_worker.cpp",
+              "helper": root / "apps/android/prefill_trunk_reuse.hpp"}
+    frozen_sources = Path(manifest["source_inputs_directory"])
+    inputs["built_worker"] = frozen_sources / "phone_chat_plan_worker.cpp"
+    inputs["built_helper"] = frozen_sources / "prefill_trunk_reuse.hpp"
+    input_hashes = {}
+    for role, path in inputs.items():
+        if path.is_symlink() or not path.is_file():
+            raise ValueError("source-build输入不是普通文件: " + role)
+        key = {"binary": "binary_sha256", "library": "library_sha256", "worker": "source_sha256",
+               "helper": "helper_sha256", "built_worker": "source_sha256", "built_helper": "helper_sha256"}[role]
+        input_hashes[role] = sha(path)
+        if input_hashes[role] != SOURCE_IDENTITY[key]:
+            raise ValueError("source-build实际输入身份不匹配: " + role)
+    return {"identity": dict(SOURCE_IDENTITY), "evidence_sha256": hashes,
+            "inputs": {role: str(path.resolve(strict=True)) for role, path in inputs.items()},
+            "input_sha256": input_hashes}
+
+
+def export_source_bundle(output, source_build, root=None):
+    """Export the accepted fresh-source ELF once, without copying its static library."""
+    output = Path(output).expanduser().absolute()
+    if output.exists() or output.is_symlink():
+        raise FileExistsError("导出目录已存在，保留原件: " + str(output))
+    before = resolve_source_build(source_build, root)
+    output.mkdir(parents=True, exist_ok=False)
+    for role in ("binary", "worker", "helper"):
+        with (output / FILES[role]).open("xb") as target:
+            target.write(Path(before["inputs"][role]).read_bytes())
+    save(output / FILES["runtime_build"], runtime_document(SOURCE_PROFILE_ID))
+    save(output / FILES["provenance"], provenance_document(SOURCE_PROFILE_ID))
+    save(output / "profile.json", profile_document(SOURCE_PROFILE_ID))
+    if before != resolve_source_build(source_build, root):
+        raise ValueError("导出期间source-build输入变化；保留目录，不得运行")
+    result = resolve_profile(output / "profile.json")
+    save(output / "export-receipt.json", {"profile_id": SOURCE_PROFILE_ID,
+         "source_before": before["input_sha256"], "source_after": before["input_sha256"],
+         "evidence_sha256": before["evidence_sha256"],
+         "output_profile_sha256": result["profile_sha256"],
+         "deployment_performed": False, "model_requests": 0})
+    return result
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     export = commands.add_parser("export", help="从本机已验收构建导出；不包含权重")
     export.add_argument("--output", required=True)
+    source = commands.add_parser("export-source", help="从固定已验完整源码构建导出；不编译、不部署、不包含权重")
+    source.add_argument("--output", required=True)
+    source.add_argument("--source-build", required=True, help="已验收link-fix-v1/build.json")
     resolve = commands.add_parser("resolve", help="只读验证运行包，不连接手机")
     resolve.add_argument("--profile", required=True)
     resolve.add_argument("--adb-path")
     args = parser.parse_args(argv)
     try:
-        result = export_bundle(args.output) if args.command == "export" else resolve_profile(args.profile)
+        if args.command == "export":
+            result = export_bundle(args.output)
+        elif args.command == "export-source":
+            result = export_source_bundle(args.output, args.source_build)
+        else:
+            result = resolve_profile(args.profile)
         if args.command == "resolve":
             result["adb_path"] = str(resolve_adb_path(args.adb_path))
         print(json.dumps(result, ensure_ascii=False, indent=2))
