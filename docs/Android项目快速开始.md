@@ -101,3 +101,13 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ```
 
 固定手机三轮正式CLI验证通过，旧包仍受支持。新包不随公开仓库分发，export-source当前只支持本项目明确纳入的一组已验构建及对应证据。详见[源码构建运行包](Android源码构建运行包-20261016.md)。
+
+## 启动前快速定位问题
+
+使用现有运行包先做本地检查；加`--device`才检查手机身份与必要文件，不会加载模型：
+
+```powershell
+python scripts/android/phone_runtime_check.py --plan-profile "build/source-runtime-bundle-20261016/手机运行包 空格/profile.json" --device --output readiness-phone.json
+```
+
+每次输出使用新的文件名，避免覆盖记录。检查通过后，再按上面的聊天命令启动。准备检查通过不等于模型已经回答；层次与已有会话的复核方法见[启动前检查与推理验收](Android启动前检查与推理验收-20261016.md)。

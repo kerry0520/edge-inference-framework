@@ -1,0 +1,14 @@
+{
+  "completed": true,
+  "readiness_tests": 14,
+  "verifier_tests": 9,
+  "new_old_bundle_offline_passed": true,
+  "clean_client_no_build_results": true,
+  "device_readonly_commands": 8,
+  "existing_requests_reviewed": 3,
+  "existing_forwards_reviewed": 31,
+  "negative_records_rejected": 7,
+  "new_model_requests": 0,
+  "new_compilations": 0,
+  "production_bundle_copies": 0
+}

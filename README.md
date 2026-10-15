@@ -97,3 +97,7 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ## 源码构建产物接入运行包
 
 此前固定源码构建已接入显式可选source profile，并完成独立正式客户端的三轮手机生成对照。旧运行包保持兼容；默认入口不变。见[使用与职责](docs/Android源码构建运行包-20261016.md)及[精简验收范围](evidence/source-runtime-bundle-20261016/README.md)。仍不声称其他设备或新电脑的全量验收。
+
+## 启动前检查与已有会话验收
+
+默认离线检查运行包和客户端；显式--device才检查固定手机及必要模型文件。另提供已有full-plan会话的离线一致性复核，准备成功与实际请求成功分别报告。见[使用与原理](docs/Android启动前检查与推理验收-20261016.md)、[阶段范围](evidence/runtime-readiness-20261016/README.md)及[项目总览](docs/项目当前成果与下一步.md)。
