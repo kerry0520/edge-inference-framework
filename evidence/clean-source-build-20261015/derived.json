@@ -1,0 +1,150 @@
+{
+  "scope": "derived source-build and generation regression; no independent hardware or full-logits proof",
+  "source_sha256": {
+    "scripts/android/build_mnn_source.py": "4bee47bee8b50a81a7775c4266f43030b7971f5bef327c408a195659019b7bb9",
+    "tests/android/test_build_mnn_source.py": "00930be673c0df2588b6d8f36cbeabd9819e486cfe7999ef17fecd4454567d49",
+    "docs/Android从源码到手机程序-20261015.md": "1525d8db9559468615c25eefd27722eadc44ead8ca6fd88436cad73eef7c4328",
+    "configs/android/mnn-source-build/lock.json": "9bc0ed4bd0e181d6503e80c0148fd86187485ec2581aad7120d19d79e4ec4bad",
+    "configs/android/mnn-source-build/README.md": "fee34a4a20ef84015fb5022b8c88eae1ec702fe1d62c006e69ba43b1f35474bc",
+    "configs/android/mnn-source-build/patches/framework.patch": "c0dbc9cdb2ac0f8f4bf1386bfd19cc81c9b46a21ef9d2f96f7808b847dc5eada",
+    "configs/android/mnn-source-build/patches/guard.patch": "81e6785cb790b766e0a902abb73e70aa02803328981d455551c22c7fee7ac3d4",
+    "configs/android/mnn-source-build/patches/trunk.patch": "45518a5785e6b395ad6c03320ba6e12cfd56f2a77b2c079a7c673b4accd2456a"
+  },
+  "complete_fresh_object_count": 565,
+  "archive_member_count": 565,
+  "kleidi_actual_object_count": 101,
+  "rebuilt_library_sha256": "5b9d239bdf841558614f29bb2657ebc378b75cd7dda08835fddeaf852022f257",
+  "rebuilt_binary_sha256": "2cc76982280e6607fdbef1e37c9de0511a9f898efd43133de6268380093dd959",
+  "rows": [
+    {
+      "mode": "control",
+      "index": 0,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "status": "max_tokens_finished",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": false,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      },
+      "worker_exit": 0,
+      "launcher_exit": 0
+    },
+    {
+      "mode": "control",
+      "index": 1,
+      "input_tokens": 80,
+      "output_tokens": 8,
+      "input_ids_sha256": "6bf272f9653af3a33ab5ac8a6ad19e619a4ed87de4d9e17bd9ce3d25df285f69",
+      "output_ids_sha256": "6c7b749a1771241317252902680f0405fcc1c775f214a5e7e7ec4be030fcf89d",
+      "text_sha256": "5b80d13a4f082b45fc4575274eb9fc07293fb947fe64ba2683e5beb7942f1b2c",
+      "status": "max_tokens_finished",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 2,
+        "full_count": 9,
+        "decode_count": 8
+      },
+      "worker_exit": 0,
+      "launcher_exit": 0
+    },
+    {
+      "mode": "control",
+      "index": 2,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "status": "max_tokens_finished",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      },
+      "worker_exit": 0,
+      "launcher_exit": 0
+    },
+    {
+      "mode": "candidate",
+      "index": 0,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "status": "max_tokens_finished",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": false,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      },
+      "worker_exit": 0,
+      "launcher_exit": 0
+    },
+    {
+      "mode": "candidate",
+      "index": 1,
+      "input_tokens": 80,
+      "output_tokens": 8,
+      "input_ids_sha256": "6bf272f9653af3a33ab5ac8a6ad19e619a4ed87de4d9e17bd9ce3d25df285f69",
+      "output_ids_sha256": "6c7b749a1771241317252902680f0405fcc1c775f214a5e7e7ec4be030fcf89d",
+      "text_sha256": "5b80d13a4f082b45fc4575274eb9fc07293fb947fe64ba2683e5beb7942f1b2c",
+      "status": "max_tokens_finished",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 2,
+        "full_count": 9,
+        "decode_count": 8
+      },
+      "worker_exit": 0,
+      "launcher_exit": 0
+    },
+    {
+      "mode": "candidate",
+      "index": 2,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "status": "max_tokens_finished",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      },
+      "worker_exit": 0,
+      "launcher_exit": 0
+    }
+  ],
+  "full_logits_included": false,
+  "new_performance_claim": false,
+  "model_or_native_distributed": false,
+  "previous_failed_build_preserved": true
+}

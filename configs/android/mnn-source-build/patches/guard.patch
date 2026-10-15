@@ -1,0 +1,116 @@
+--- a/transformers/llm/engine/src/llm.cpp
++++ b/transformers/llm/engine/src/llm.cpp
+@@ -1109,78 +1109,46 @@
+     }
+     auto prompt = apply_chat_template(chat_prompts);
+ 
+-    // Prompt cache: compare current prompt text against the previous turn's to
+-    // find the common prefix, then only tokenize and prefill the new suffix.
++    // Prompt cache: retain only an exact, already-forwarded token prefix.
+     if (mConfig->prompt_cache() && !mCachedPromptText.empty()) {
+-        // Use add_generation_prompt=false for comparison to avoid enable_thinking
+-        // asymmetry: the template adds <think> to the LAST assistant message only
+-        // when true. Using false renders all messages consistently.
+-        auto prompt_for_compare = mTokenizer->apply_chat_template(chat_prompts, false);
+-        size_t text_common = 0;
+-        size_t text_max = std::min(mCachedPromptText.size(), prompt_for_compare.size());
+-        while (text_common < text_max && mCachedPromptText[text_common] == prompt_for_compare[text_common])
+-            text_common++;
+-
+-        // If history was trimmed (text_common < cached), fall back to full
+-        // re-prefill rather than conditioning on stale KV entries.
+-        if (text_common < mCachedPromptText.size()) {
+-            // History was trimmed — clear all stale state and do full re-prefill.
+-            mCachedPromptText.clear();
+-            mContext->all_seq_len = 0;
+-            mContext->history_tokens.clear();
+-            mMeta->remove = mMeta->previous;
+-            std::vector<int> input_ids = tokenizer_encode(prompt);
+-            size_t history_before = input_ids.size(); // generate() pushes these first
+-            response(input_ids, os, end_with, max_new_tokens);
+-            if (mConfig->prompt_cache()) {
+-                updateCachedPromptText(chat_prompts, history_before);
+-            }
+-            return;
+-        }
+-
+-        // Tokenize the full prompt and split at a token boundary rather than
+-        // tokenizing a text substring (which can land mid-token for BPE/UTF-8).
++        // Reuse only an exact prefix of tokens which have actually been forwarded.
++        // Rendered chat text may omit a previous empty think block or include EOS
++        // which was sampled but never forwarded. Text-prefix offsets are not KV offsets.
+         std::vector<int> full_tokens = tokenizer_encode(prompt);
+-        // Detect prefix token count (BOS, etc.) by encoding an empty string.
+-        // tokenizer_encode("") returns only the prefix tokens that are
+-        // automatically prepended to every input (e.g., <|begin_of_text|>).
+-        // This count is used to skip prefix tokens when mapping text
+-        // positions to token indices, since they don't correspond to any
+-        // prompt text bytes. Assumption: prefix tokens are constant across
+-        // inputs for a given tokenizer configuration.
+-        size_t prefix_count = tokenizer_encode("").size();
+-        size_t char_pos = 0;
+-        size_t token_split = prefix_count; // start after prefix tokens
+-        for (size_t i = prefix_count; i < full_tokens.size(); i++) {
+-            std::string piece = tokenizer_decode(full_tokens[i]);
+-            if (char_pos + piece.size() > text_common)
+-                break;
+-            char_pos += piece.size();
+-            token_split++;
+-        }
+-        std::vector<int> delta(full_tokens.begin() + token_split, full_tokens.end());
+-        MNN_PRINT("[prompt_cache] cached=%d, compare=%d, common=%d, token_split=%d, delta=%d\n",
+-                  (int)mCachedPromptText.size(), (int)prompt_for_compare.size(), (int)text_common, (int)token_split,
+-                  (int)delta.size());
+-
+-        // Save/restore KV state across generate_init — only the delta path
+-        // should preserve KV; other response() overloads clear as normal.
+-        // Also preserve mMeta->remove so that a pending eraseHistory() (from
+-        // a prior cancelled decode) is not silently cleared before sync().
+-        int saved_all_seq_len = mContext->all_seq_len;
+-        auto saved_history = std::move(mContext->history_tokens);
+-        size_t saved_previous = mMeta->previous;
+-        size_t saved_remove = mMeta->remove;
++        const size_t previous = mMeta->previous;
++        const bool contiguous = mMeta->n_reserve == 0 && mMeta->seqlen_in_disk == 0 &&
++            mMeta->remove <= previous;
++        const size_t effective = contiguous ? previous - mMeta->remove : 0;
++        const bool ordinary = mConfig->reuse_kv() && !mInSpec && !mAsync && !mPrefixCacheMode && mConfig->speculative_type().empty() &&
++            mConfig->backend_type() == "cpu" && !mConfig->config_.value("async", false) &&
++            mBlockSize == 32 && mValidBlockSize.empty();
++        const bool aligned = ordinary && contiguous && mContext->all_seq_len >= 0 &&
++            static_cast<size_t>(mContext->all_seq_len) == effective &&
++            mContext->history_tokens.size() >= effective;
++        size_t keep = 0;
++        const bool prefill_count_valid = mContext->history_tokens.size() >= mContext->output_tokens.size();
++        const size_t previous_prefill = prefill_count_valid ? mContext->history_tokens.size() - mContext->output_tokens.size() : 0;
++        if (aligned && prefill_count_valid && previous_prefill <= effective) {
++            while (keep < effective && keep < full_tokens.size() &&
++                   mContext->history_tokens[keep] == full_tokens[keep]) ++keep;
++        }
++        // Only reuse complete fixed-shape prefill blocks; exclude old decode KV.
++        keep = (std::min(keep, previous_prefill) / 32) * 32;
++        // A nonempty prefill is required to obtain logits for the next token.
++        if (keep == full_tokens.size() && keep > 0) keep -= 32;
++        mMeta->remove = previous - keep;
++        mMeta->n_reserve = 0;
++        mMeta->reserve = nullptr;
++        mContext->all_seq_len = static_cast<int>(keep);
++        mContext->history_tokens.resize(keep);
++        std::vector<int> delta(full_tokens.begin() + keep, full_tokens.end());
++        const size_t saved_remove = mMeta->remove;
+         generate_init(os, end_with);
+-        mContext->all_seq_len = saved_all_seq_len;
+-        mContext->history_tokens = std::move(saved_history);
+-        mMeta->previous = saved_previous;
++        mContext->all_seq_len = static_cast<int>(keep);
++        mMeta->previous = previous;
+         mMeta->remove = saved_remove;
+         CHECK_LLM_RUNNING(mContext);
+-        // history_before must account for the delta tokens that generate()
+-        // pushes into history_tokens before decode starts, so that
+-        // updateCachedPromptText only sees the assistant response tokens.
+-        size_t history_before = mContext->history_tokens.size() + delta.size();
++        size_t history_before = keep + delta.size();
+         generate(delta, max_new_tokens);
+ 
+         // Update cache after generation so non-Android callers (llm_demo,

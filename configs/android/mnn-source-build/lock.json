@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "source_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2",
+  "kleidiai": {
+    "version": "1.16.0",
+    "url": "https://github.com/ARM-software/kleidiai/archive/refs/tags/v1.16.0.tar.gz",
+    "sha256": "57b0a95c559ec6a4b1460bc742af600bfb6cdff8dc39154b376c25347d7b0891"
+  },
+  "ndk_revision": "30.0.16248370",
+  "patches": {
+    "configs/android/mnn-source-build/patches/framework.patch": "c0dbc9cdb2ac0f8f4bf1386bfd19cc81c9b46a21ef9d2f96f7808b847dc5eada",
+    "configs/android/mnn-source-build/patches/guard.patch": "81e6785cb790b766e0a902abb73e70aa02803328981d455551c22c7fee7ac3d4",
+    "configs/android/mnn-source-build/patches/trunk.patch": "45518a5785e6b395ad6c03320ba6e12cfd56f2a77b2c079a7c673b4accd2456a"
+  },
+  "sources": {
+    "source/backend/cpu/CPUBackend.cpp": "901273d30293ec85dcab99c39a8342335174703603ee14053fad1053fe75a329",
+    "transformers/llm/engine/src/tokenizer/tokenizer.cpp": "57f391f37d4c5e175e8e33710ea4ad9951f13482597476548706d221b77815af",
+    "transformers/llm/engine/src/llm.cpp": "0c378976ca895e291bf49edc4c5d2d904d1eecd85dbd07b43c9ed4adf3346a75",
+    "express/module/StaticModule.cpp": "9017cb2bbdfd4832a36d4b155fec4dd090802569ec658a1998d70d0232e55a66",
+    "source/backend/cpu/CPUAttention.cpp": "cac0a45a8aceef1b0b6a792b2c1d3a70cc707b7f49496089148223f6a7465513"
+  },
+  "client": {
+    "apps/android/phone_chat_plan_worker.cpp": "bbec551047e4d58690e03d4d48b525371e7a6a06dc6d49cd314fa88c80788b1a",
+    "apps/android/prefill_trunk_reuse.hpp": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04"
+  },
+  "options": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "ANDROID_ABI": "arm64-v8a",
+    "ANDROID_PLATFORM": "android-24",
+    "ANDROID_STL": "c++_static",
+    "MNN_BUILD_LLM": "ON",
+    "MNN_BUILD_FOR_ANDROID_COMMAND": "ON",
+    "MNN_BUILD_SHARED_LIBS": "OFF",
+    "MNN_SEP_BUILD": "OFF",
+    "MNN_BUILD_TEST": "OFF",
+    "MNN_BUILD_BENCHMARK": "OFF",
+    "MNN_OPENCL": "OFF",
+    "MNN_VULKAN": "OFF",
+    "LLM_SUPPORT_HTTP_RESOURCE": "OFF",
+    "MNN_KLEIDIAI": "ON",
+    "MNN_LOW_MEMORY": "ON",
+    "MNN_ARM82": "ON",
+    "MNN_SME2": "ON",
+    "MNN_SUPPORT_QUANT_EXTEND": "ON",
+    "MNN_SUPPORT_TRANSFORMER_FUSE": "ON",
+    "MNN_USE_THREAD_POOL": "ON",
+    "MNN_USE_LOGCAT": "ON",
+    "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+  },
+  "diagnostic": false,
+  "abi": "arm64-v8a",
+  "api": 24,
+  "host": "Windows x86_64",
+  "cmake_version": "4.1.1-msvc1",
+  "ninja_version": "1.12.1",
+  "no_network": true
+}

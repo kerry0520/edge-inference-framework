@@ -1,0 +1,91 @@
+diff --git a/source/backend/cpu/CPUBackend.cpp b/source/backend/cpu/CPUBackend.cpp
+index 9722d88..414a0c3 100644
+--- a/source/backend/cpu/CPUBackend.cpp
++++ b/source/backend/cpu/CPUBackend.cpp
+@@ -288,12 +288,27 @@ Backend* CPURuntime::onCreate(const BackendConfig* config, Backend* origin) cons
+         prefix[4] += mMemory;
+         prefix[6] += mPower;
+         // prefix += hint().modelUUID + "_";
++        // An uncached mmap allocation is removed at shutdown. Keep its files
++        // separate from persistent cached weights, otherwise it can delete a
++        // valid cache file while leaving the cache's sync marker behind.
++        if (!hint().useCachedMmap) {
++            prefix += "uncached_";
++        }
+         bool autoRemove = true;
+         bool syncValid = false;
+         if (hint().useCachedMmap) {
+             autoRemove = false;
+             std::string fileName = MNNFilePathConcat(hint().weightMemoryPath, prefix + "sync.static");
+             syncValid = MNNFileExist(fileName.c_str());
++            if (syncValid) {
++                // A previous uncached run could have removed the data file but
++                // left the marker. Invalidate that marker before rebuilding.
++                std::string dataFileName = MNNFilePathConcat(hint().weightMemoryPath, prefix + "0.static");
++                if (!MNNFileExist(dataFileName.c_str())) {
++                    MNNRemoveFile(fileName.c_str());
++                    syncValid = false;
++                }
++            }
+             const_cast<RuntimeHint&>(hint()).useCachedMmap += syncValid;
+         }
+         if (nullptr == mStaticAllocatorMMap.get()) {
+diff --git a/transformers/llm/engine/src/tokenizer/tokenizer.cpp b/transformers/llm/engine/src/tokenizer/tokenizer.cpp
+index 4ae4719..6fac101 100644
+--- a/transformers/llm/engine/src/tokenizer/tokenizer.cpp
++++ b/transformers/llm/engine/src/tokenizer/tokenizer.cpp
+@@ -127,7 +127,10 @@ Tokenizer* Tokenizer::createTokenizer(const std::string& filename) {
+     // load special tokens
+     tokenizer->load_special(tok_file);
+     // load vocabs
+-    tokenizer->load_vocab(tok_file);
++    if (!tokenizer->load_vocab(tok_file)) {
++        delete tokenizer;
++        return nullptr;
++    }
+     tok_file.close();
+     tokenizer->cache_special_tokens();
+     return tokenizer;
+@@ -779,20 +782,28 @@ bool HuggingfaceTokenizer::load_vocab(std::ifstream& tok_file) {
+     std::string line;
+     line.reserve(256); // Reduce allocation during getline
+ 
++    // Use the numeric count header to identify the file line-ending convention.
++    // LF vocabulary keys may contain a literal trailing CR. Mixed endings are unsupported.
++    if (!std::getline(tok_file, line)) return false;
++    const bool crlf = !tok_file.eof() && !line.empty() && line.back() == '\r';
++    auto read_line = [&tok_file, crlf](std::string& value) -> bool {
++        if (!std::getline(tok_file, value)) return false;
++        if (crlf && !tok_file.eof() && !value.empty() && value.back() == '\r') value.pop_back();
++        return true;
++    };
++
+     // 1. Get nums
+     int vocab_len = 0;
+     int merge_len = 0;
+-    if (std::getline(tok_file, line)) {
+-        std::istringstream line_str(line);
+-        line_str >> vocab_len >> merge_len;
+-    }
++    std::istringstream line_str(line);
++    if (!(line_str >> vocab_len >> merge_len) || vocab_len <= 0 || merge_len < 0) return false;
+ 
+     // 2. Load vocab
+     decoder_.resize(vocab_len);
+     encoder_.reserve(vocab_len);
+ 
+     for (int i = 0; i < vocab_len; i++) {
+-        std::getline(tok_file, line);
++        if (!read_line(line)) return false;
+         // Move string to decoder to avoid copy, then use reference for encoder
+         decoder_[i] = std::move(line);
+         encoder_.emplace(decoder_[i], i);
+@@ -801,7 +812,7 @@ bool HuggingfaceTokenizer::load_vocab(std::ifstream& tok_file) {
+     // 3. Load merge_rules
+     bpe_ranks_.reserve(merge_len);
+     for (int i = 0; i < merge_len; i++) {
+-        std::getline(tok_file, line);
++        if (!read_line(line)) return false;
+ 
+         size_t d = line.find(' ');
+         if (d != std::string::npos) {

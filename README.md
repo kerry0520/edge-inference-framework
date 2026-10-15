@@ -87,3 +87,9 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ## 已验运行包的目录搬移
 
 可以在已有验收构建上导出固定运行包，再用`--plan-profile`从新目录启动。固定手机上的六次新旧入口对照一致，独立客户端另一次真实提问正常退出；默认入口不变。不分发模型或原生程序，导出仍需要已验本机构建，尚未完成新电脑的全量源码构建。见[运行包课程](docs/Android运行包与构建依赖-20261015.md)与[验收范围及精简证据](evidence/portable-plan-profile-20261015/README.md)。
+
+## 固定源码完整构建
+
+新增独立配方：固定MNN提交与项目补丁、本地NDK/KleidiAI、全新对象目录，完整重建CPU静态库并链接聊天worker。565实际对象与565归档成员对应，固定手机三组新旧生成回归一致，旧运行入口保持已验版本。新构建目前是显式实验候选；尚未验收新电脑或其他设备，也无新性能声明。
+
+见[构建步骤](configs/android/mnn-source-build/README.md)、[职责讲解](docs/Android从源码到手机程序-20261015.md)和[精简验收](evidence/clean-source-build-20261015/README.md)。源码仓库不分发模型、工具链、静态库或原生程序。
