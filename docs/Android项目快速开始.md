@@ -80,3 +80,14 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 这个可选入口默认部署总预算512token，包含模板输入和生成预算；超过会拒绝并保留历史，可`/new`重开。仅支持full＋stats，不能与kv/query或stats-build-tag同时选择。不开开关时，默认入口和预算仍按原配置运行。
 
 当前仅本机构建、固定MNN/Qwen3-0.6B/CPU配置验收，公开仓库不包含手机模型与编译库。详细职责与验收范围见[从聊天开关到手机执行计划](Android可选执行计划缓存聊天-20261015.md)。
+
+## 可选：把已验程序导出为独立运行包
+
+当前新增运行包入口，用于已有固定构建的导出与目录搬移。导出阶段需要原构建证据；指定profile运行时改从包内校验程序、辅助源码和身份记录，不再读取历史静态库。
+
+```powershell
+python scripts/android/phone_plan_profile.py export --output build/phone-runtime-v1
+python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --plan-profile "build/phone-runtime-v1/profile.json"
+```
+
+导出目录必须尚不存在，包包含约87MiB程序，不含手机模型或ADB；可用`--adb-path`显式指定ADB文件。当前仍限定同一已验手机与模型，不代表任意新设备适配。固定手机上的实机搬移对照和独立客户端提问已通过；尚未验收新电脑或其他手机。详见[运行包与构建依赖](Android运行包与构建依赖-20261015.md)。

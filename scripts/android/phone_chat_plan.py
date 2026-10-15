@@ -106,18 +106,40 @@ class PlanCacheSession(FullStatsSession):
                     "use_cached_mmap": False, "kvcache_mmap": False, "reuse_kv": False,
                     "prompt_cache": False, "prefill_head_elision": True}
 
-    def __init__(self, serial=None, record_parent=None, max_context_tokens=512):
+    def __init__(self, serial=None, record_parent=None, max_context_tokens=512,
+                 profile_path=None, adb_path=None):
         if type(max_context_tokens) is not int or not 1 <= max_context_tokens <= 512:
             raise ValueError("主干计划复用入口的部署token预算为1..512")
-        self.profile = resolve_plan_build()
+        if adb_path is not None and profile_path is None:
+            raise ValueError("--adb-path仅用于明确的--plan-profile运行包")
+        self.profile_path = Path(profile_path).expanduser().absolute() if profile_path is not None else None
+        self.profile = self.resolve_runtime()
+        chosen_adb = None
+        if self.profile_path is not None:
+            from phone_plan_profile import resolve_adb_path
+            chosen_adb = resolve_adb_path(adb_path)
+            self.binary_path = Path(self.profile["binary_path"])
+            self.manifest_path = Path(self.profile["manifest_path"])
+            self.worker_source = Path(self.profile["worker_source_path"])
+            self.record_root = ROOT / "results/android/portable-plan-profile-20261015/sessions"
         self._plan_seen = False
         super().__init__(serial, record_parent, max_context_tokens=max_context_tokens)
+        if chosen_adb is not None:
+            self.adb.exe = chosen_adb
+            self.record["runtime_profile"] = dict(self.profile)
+            self.record["adb_path"] = str(chosen_adb)
         self.record["plan_build"] = self.profile
         self.record["plan_client_sha256"] = full.sha(__file__)
         self.persist()
 
+    def resolve_runtime(self):
+        if self.profile_path is None:
+            return resolve_plan_build()
+        from phone_plan_profile import resolve_profile
+        return resolve_profile(self.profile_path)
+
     def start(self):
-        if resolve_plan_build() != self.profile:
+        if self.resolve_runtime() != self.profile:
             raise ValueError("计划构建在启动前发生变化；未连接手机")
         super().start()
         ready = self.record["ready"]
@@ -207,15 +229,20 @@ class BaselinePlanSession(PlanCacheSession):
 def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--max-context-tokens", type=int, default=512)
-    args, _ = parser.parse_known_args()
+    parser.add_argument("--plan-profile")
+    parser.add_argument("--adb-path")
+    args, forwarded = parser.parse_known_args()
     if not 1 <= args.max_context_tokens <= 512:
         parser.error("主干计划复用入口的部署token预算为1..512")
+    if args.adb_path is not None and args.plan_profile is None:
+        parser.error("--adb-path需要--plan-profile")
+    class SelectedPlanSession(PlanCacheSession):
+        def __init__(self, *values, **kwargs):
+            super().__init__(*values, profile_path=args.plan_profile, adb_path=args.adb_path, **kwargs)
     original = sys.argv
     try:
-        if "--max-context-tokens" not in original and not any(
-                v.startswith("--max-context-tokens=") for v in original):
-            sys.argv = original + ["--max-context-tokens", "512"]
-        return full.main(session_type=PlanCacheSession, loaded_message=(
+        sys.argv = [original[0], *forwarded, "--max-context-tokens", str(args.max_context_tokens)]
+        return full.main(session_type=SelectedPlanSession, loaded_message=(
             "模型已加载；多轮聊天（完整重算历史＋主干计划复用），/new新对话，/history看历史，/stats看统计，/exit退出。"))
     finally:
         sys.argv = original

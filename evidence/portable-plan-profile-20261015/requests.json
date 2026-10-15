@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "scope": "derived relocation comparison; not hardware identity or full logits proof",
+  "default_profile_enabled": false,
+  "new_performance_claim": false,
+  "full_logits_included": false,
+  "model_or_native_included": false,
+  "native_processes": 2,
+  "actual_forwards": 62,
+  "source_sha256": {
+    "scripts/android/phone_plan_profile.py": "0d0f3e4c2cd7456d0aac6d256dd14709c43598ccac836d99edb880d71a263713",
+    "scripts/android/phone_chat_plan.py": "4f1ed9675fbe7a6d40e63be7ac4d15750496ce3996d3c672d06a46f2a32b2649",
+    "scripts/android/phone_chat.py": "6cd7e1450d43efb5075c0d67c2e80e6371c40298dcdc4f175b5557bc6c1a3a08",
+    "scripts/android/phone_chat_cleanup.py": "f81bdde83b820a877a6fdd9c68198794c3f1d5edb6e496a0b85659e4af9d05d3",
+    "tests/android/test_phone_plan_profile.py": "b4a61b3cabc78b350304bf55836d5403f2d20a229c5c0fc379a86bb588967a63",
+    "tests/android/test_phone_chat_cleanup.py": "684d3438573e3e1f1e569530ce7c313f879d6e04afb2c032446eb8a4824558e5",
+    "tests/android/test_phone_chat_router.py": "10df20ca630ce84de17eed1365a6bb9056c37557cf89896b5c7e1b1f2c5e123f",
+    "docs/Android运行包与构建依赖-20261015.md": "edfc41493dc44d54df800271bad6f59c27dc2e158cb6b9bd8864221940716a62",
+    "docs/Android项目快速开始.md": "56a5ed5262f8b282e77e34feb5d91a12fa657e0902a6e304402cac57eb423aa3"
+  },
+  "rows": [
+    {
+      "mode": "strict",
+      "index": 0,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "status": "max_tokens_finished",
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": false,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    },
+    {
+      "mode": "strict",
+      "index": 1,
+      "input_tokens": 80,
+      "output_tokens": 8,
+      "status": "max_tokens_finished",
+      "input_ids_sha256": "6bf272f9653af3a33ab5ac8a6ad19e619a4ed87de4d9e17bd9ce3d25df285f69",
+      "output_ids_sha256": "6c7b749a1771241317252902680f0405fcc1c775f214a5e7e7ec4be030fcf89d",
+      "text_sha256": "5b80d13a4f082b45fc4575274eb9fc07293fb947fe64ba2683e5beb7942f1b2c",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 2,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    },
+    {
+      "mode": "strict",
+      "index": 2,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "status": "max_tokens_finished",
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    },
+    {
+      "mode": "relocated",
+      "index": 0,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "status": "max_tokens_finished",
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": false,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    },
+    {
+      "mode": "relocated",
+      "index": 1,
+      "input_tokens": 80,
+      "output_tokens": 8,
+      "status": "max_tokens_finished",
+      "input_ids_sha256": "6bf272f9653af3a33ab5ac8a6ad19e619a4ed87de4d9e17bd9ce3d25df285f69",
+      "output_ids_sha256": "6c7b749a1771241317252902680f0405fcc1c775f214a5e7e7ec4be030fcf89d",
+      "text_sha256": "5b80d13a4f082b45fc4575274eb9fc07293fb947fe64ba2683e5beb7942f1b2c",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 2,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    },
+    {
+      "mode": "relocated",
+      "index": 2,
+      "input_tokens": 42,
+      "output_tokens": 8,
+      "status": "max_tokens_finished",
+      "input_ids_sha256": "d772b24ee445375528a9947bf2e5484ba7c92a9759a153f4d951ee9b5ff82d0b",
+      "output_ids_sha256": "d77d00a77843b1087509b302a1ca5e0e644fe9875d1317bc08ac4ab48bc8bddf",
+      "text_sha256": "0959e658eac2d47dece4ac26d28efde2feefd3821605ee35f665735fd93ad49e",
+      "plan_cache": {
+        "requested": true,
+        "eligible": true,
+        "prepared": true,
+        "cache_hit": true,
+        "trunk_count": 1,
+        "full_count": 9,
+        "decode_count": 8
+      }
+    }
+  ],
+  "exits": {
+    "strict": {
+      "worker_exit": 0,
+      "launcher_exit": 0,
+      "registry_owner_count": 0,
+      "conversation_resets": 1,
+      "collection_verified": true
+    },
+    "relocated": {
+      "worker_exit": 0,
+      "launcher_exit": 0,
+      "registry_owner_count": 0,
+      "conversation_resets": 1,
+      "collection_verified": true
+    }
+  },
+  "read_guard": {
+    "strict_resolver_calls": 0,
+    "denied_count": 0,
+    "python_read_count": 68,
+    "scope": "host Python open audit only; not a child process sandbox"
+  },
+  "limitations": [
+    "fixed Mi11/Qwen3-0.6B CPU configuration",
+    "runtime export requires an already accepted local build",
+    "no models or native executables distributed",
+    "no source rebuild or new performance measurement",
+    "derived hashes do not prove hardware, raw collection, or full logits"
+  ],
+  "strict_collection_note": "Original strict collector stopped_with_error solely on local stdout transfer; immutable original plus SHA-verified supplement independently reviewed. Relocated uses repaired host collection; native and model remain identical."
+}

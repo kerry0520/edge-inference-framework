@@ -11,12 +11,18 @@ def main():
     parser.add_argument("--stats", action="store_true", help="启用逐轮token与原生prefill/decode统计（full或kv）")
     parser.add_argument("--stats-build-tag", help="选择build_chat_metrics.py的record-tag；仅--stats full/kv，省略保持默认构建")
     parser.add_argument("--prefill-plan-cache", action="store_true", help="完整重算历史并复用主干执行计划；需要--mode full --stats")
+    parser.add_argument("--plan-profile", help="已导出的本地运行包profile.json；需要--prefill-plan-cache")
+    parser.add_argument("--adb-path", help="运行包模式使用的本机ADB路径；需要--plan-profile")
     parser.add_argument("--serial", help="可选ADB连接地址；省略时自动发现已配对手机")
     parser.add_argument("--prompt", help="一次提问后正常退出；省略时进入交互聊天")
     parser.add_argument("--max-new-tokens", type=int, default=64)
     parser.add_argument("--max-context-tokens", type=int, default=None,
                         help="部署输入+生成token预算，不代表模型最大上下文")
     args = parser.parse_args()
+    if args.plan_profile is not None and not args.prefill_plan_cache:
+        parser.error("--plan-profile需要--prefill-plan-cache --mode full --stats")
+    if args.adb_path is not None and args.plan_profile is None:
+        parser.error("--adb-path需要--plan-profile")
     if args.prefill_plan_cache and (args.mode != "full" or not args.stats or args.stats_build_tag is not None):
         parser.error("--prefill-plan-cache需要--mode full --stats，且不能同时选择--stats-build-tag")
     if args.max_context_tokens is None:
@@ -47,6 +53,10 @@ def main():
         forwarded += ["--serial", args.serial]
     if args.prompt is not None:
         forwarded += ["--prompt", args.prompt]
+    if args.plan_profile is not None:
+        forwarded += ["--plan-profile", args.plan_profile]
+    if args.adb_path is not None:
+        forwarded += ["--adb-path", args.adb_path]
     if args.stats and not args.prefill_plan_cache:
         forwarded += ["--mode", args.mode]
         if args.stats_build_tag is not None:

@@ -83,3 +83,7 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ```
 
 以上用于已配置设备与固定构建；预算超限可`/new`，消息历史不会自动截断。`/stats`中复用token指KV，计划状态单独显示。详见[使用与原理](docs/Android可选执行计划缓存聊天-20261015.md)及[入口验收简结](evidence/plan-cache-chat-20261015/README.md)。
+
+## 已验运行包的目录搬移
+
+可以在已有验收构建上导出固定运行包，再用`--plan-profile`从新目录启动。固定手机上的六次新旧入口对照一致，独立客户端另一次真实提问正常退出；默认入口不变。不分发模型或原生程序，导出仍需要已验本机构建，尚未完成新电脑的全量源码构建。见[运行包课程](docs/Android运行包与构建依赖-20261015.md)与[验收范围及精简证据](evidence/portable-plan-profile-20261015/README.md)。

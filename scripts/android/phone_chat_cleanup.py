@@ -9,8 +9,6 @@ import subprocess
 import time
 import uuid
 
-from phone_chat_transfer import ascii_stage, remove_stage
-
 ADB_TIMEOUT = 5
 WAIT_TIMEOUT = 3
 
@@ -53,18 +51,15 @@ class CleanupAdb:
         destination = Path(destination)
         if destination.exists():
             raise FileExistsError("保留已有采集原件: " + str(destination))
-        stage, parent = ascii_stage("phone-chat-cleanup-")
-        staged = stage / "stdout.log"
-        # Failed stage is deliberately retained and its location recorded.
-        self.session.record["cleanup"]["collection_stage"] = str(stage)
         digest = self.shell("sha256sum " + shlex.quote(remote)).decode().split()[0]
-        self.call("pull", remote, str(staged))
-        raw = staged.read_bytes()
-        if not raw or hashlib.sha256(raw).hexdigest() != digest:
+        # exec-out preserves arbitrary log bytes and avoids local ADB path parsing.
+        # call() retains stdout/stderr and actual exit even when validation fails.
+        raw = self.call("exec-out", "cat", shlex.quote(remote))
+        after = self.shell("sha256sum " + shlex.quote(remote)).decode().split()[0]
+        if not raw or digest != after or hashlib.sha256(raw).hexdigest() != digest:
             raise RuntimeError("退出日志采集为空/身份不匹配")
         with destination.open("xb") as output:
             output.write(raw)
-        remove_stage(stage, parent, "phone-chat-cleanup-")
         return {"remote": remote, "sha256": digest, "bytes": len(raw)}
 
 

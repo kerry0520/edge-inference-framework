@@ -1,10 +1,12 @@
 """Offline failure injection for bounded ownership checks and transaction cleanup."""
 import json
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]/"scripts/android"))
@@ -207,6 +209,75 @@ class CleanupTests(unittest.TestCase):
                 self.assertTrue(s.record["cleanup"]["resource_cleanup_confirmed"])
                 saved=json.loads((s.directory/"session.json").read_text(encoding="utf-8"))
                 self.assertEqual(saved["adb_launcher_exit"],actual_exit)
+
+
+class CleanupLogTransferTests(unittest.TestCase):
+    def transfer(self, directory, replies, destination=None):
+        session = SimpleNamespace(directory=Path(directory),
+                                  adb=SimpleNamespace(exe="never-run-adb.exe", serial="offline", commands=[]))
+        client = cleanup.CleanupAdb(session)
+        target = Path(directory) / "worker-stdout.log" if destination is None else destination
+        return session, client, target
+
+    def test_exec_out_preserves_non_utf8_bytes_and_three_hashes(self):
+        raw = b"\xff\x00\x80\r\nlog\r\n"
+        digest = hashlib.sha256(raw).hexdigest()
+        with tempfile.TemporaryDirectory() as directory:
+            session, client, target = self.transfer(directory, [])
+            replies = [subprocess.CompletedProcess([], 0, (digest + "  /remote/log\n").encode(), b""),
+                       subprocess.CompletedProcess([], 0, raw, b""),
+                       subprocess.CompletedProcess([], 0, (digest + "  /remote/log\n").encode(), b"")]
+            with patch.object(cleanup.subprocess, "run", side_effect=replies):
+                result = client.pull_verified("/remote/log", target)
+            self.assertEqual(target.read_bytes(), raw)
+            self.assertEqual(result, {"remote": "/remote/log", "sha256": digest, "bytes": len(raw)})
+            self.assertEqual(session.adb.commands[1], ["exec-out", "cat", "/remote/log"])
+            evidence = list((Path(directory) / "cleanup-evidence").iterdir())
+            self.assertEqual(len(evidence), 3)
+            self.assertTrue(any((entry / "stdout.bin").read_bytes() == raw for entry in evidence))
+
+    def test_hash_change_empty_or_local_mismatch_rejects_and_keeps_evidence(self):
+        raw = b"actual\xff"
+        digest = hashlib.sha256(raw).hexdigest()
+        for payload, after in ((raw, "0" * 64), (b"", digest), (b"other", digest)):
+            with self.subTest(payload=payload, after=after), tempfile.TemporaryDirectory() as directory:
+                session, client, target = self.transfer(directory, [])
+                replies = [subprocess.CompletedProcess([], 0, (digest + " log\n").encode(), b""),
+                           subprocess.CompletedProcess([], 0, payload, b""),
+                           subprocess.CompletedProcess([], 0, (after + " log\n").encode(), b"")]
+                with patch.object(cleanup.subprocess, "run", side_effect=replies):
+                    with self.assertRaisesRegex(RuntimeError, "退出日志采集为空/身份不匹配"):
+                        client.pull_verified("/remote/log", target)
+                self.assertFalse(target.exists())
+                self.assertEqual(len(list((Path(directory) / "cleanup-evidence").iterdir())), 3)
+
+    def test_nonzero_exec_out_keeps_raw_and_actual_exit(self):
+        digest = hashlib.sha256(b"complete").hexdigest()
+        with tempfile.TemporaryDirectory() as directory:
+            session, client, target = self.transfer(directory, [])
+            replies = [subprocess.CompletedProcess([], 0, (digest + " log\n").encode(), b""),
+                       subprocess.CompletedProcess([], 7, b"partial\xff", b"read failed")]
+            with patch.object(cleanup.subprocess, "run", side_effect=replies):
+                with self.assertRaisesRegex(RuntimeError, "cleanup ADB退出7"):
+                    client.pull_verified("/remote/log", target)
+            self.assertFalse(target.exists())
+            evidence = list((Path(directory) / "cleanup-evidence").iterdir())
+            failed = [entry for entry in evidence if json.loads((entry / "execution.json").read_text())["returncode"] == 7]
+            self.assertEqual(len(failed), 1)
+            self.assertEqual((failed[0] / "stdout.bin").read_bytes(), b"partial\xff")
+            self.assertEqual((failed[0] / "stderr.bin").read_bytes(), b"read failed")
+            self.assertEqual(len(session.adb.commands), 2)
+
+    def test_existing_destination_rejected_before_adb(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, client, target = self.transfer(directory, [])
+            target.write_bytes(b"original")
+            with patch.object(cleanup.subprocess, "run") as run:
+                with self.assertRaises(FileExistsError):
+                    client.pull_verified("/remote/log", target)
+                run.assert_not_called()
+            self.assertEqual(target.read_bytes(), b"original")
+            self.assertEqual(session.adb.commands, [])
 
 
 if __name__=="__main__":unittest.main()
