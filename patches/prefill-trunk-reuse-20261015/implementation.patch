@@ -1,0 +1,478 @@
+MNN per-owner persistent trunk: isolated correctness and macro0 performance implementation
+Source: alibaba/MNN 3.6.1, d407447ed56c4121a11ccbd266dc184ca1ead0c2; Apache-2.0.
+llm.cpp preimage is project guard SHA256 f9ba43aa7ed1ae183fbf31b40ca14570ed55493cbd4a99e88946863148e30347, not unmodified upstream.
+Required helper: apps/android/prefill_trunk_reuse.hpp (included below).
+Reconstruction receipt is source-only; hardware validation is documented separately. Build with PREFILL_REUSE_DIAGNOSTIC=1 for diagnostics, 0 for performance.
+
+diff --git a/transformers/llm/engine/src/llm.cpp b/transformers/llm/engine/src/llm.cpp
+--- a/transformers/llm/engine/src/llm.cpp
++++ b/transformers/llm/engine/src/llm.cpp
+@@ -1,3 +1,5 @@
++#include "prefill_trunk_reuse.hpp"
++#include <cmath>
+ //
+ //  llm.cpp
+ //
+@@ -124,8 +126,20 @@
+     }
+ }
+ 
++static std::string reuseConfigKey(const ujson::json& config) {
++    // ujson copies share a RapidJSON document; parse a serialization for ownership.
++    auto stable = ujson::json::parse(config.dump());
++    stable.erase("prefill_head_elision");
++    stable.erase("prefill_reuse_lifecycle");
++    return stable.dump();
++}
++
+ bool Llm::set_config(const std::string& content) {
++    const auto priorKey = reuseConfigKey(mConfig->config_);
+     mConfig->config_.merge(ujson::json::parse(content));
++    ResponseElision::lifecycle() = mConfig->config_.value("prefill_reuse_lifecycle", false);
++    if (priorKey != reuseConfigKey(mConfig->config_)) ResponseElision::erase(this);
++    else if (!mConfig->config_.value("prefill_head_elision", false)) ResponseElision::evict(this, "explicit_off");
+     setChatTemplate();
+     mAsync = mConfig->config_.value("async", true);
+     mGenerateParam->timeout_ms = mConfig->timeout_ms();
+@@ -285,6 +299,7 @@
+ }
+ 
+ bool Llm::load() {
++    ResponseElision::erase(this);
+     // check required files before loading
+     std::string tokenizer_path = mConfig->tokenizer_file();
+     std::string model_path = mConfig->llm_model();
+@@ -436,6 +451,7 @@
+     // MTP model load
+     mGenerationStrategy->load(module_config);
+     mContext->load_us += _t.durationInUs();
++    ResponseElision::bind(this, mModule.get(), mRuntimeManager.get(), mMeta.get(), model_path, weight_path, reuseConfigKey(mConfig->config_));
+     mContext->status = LlmStatus::RUNNING;  // Set status to RUNNING after successful load
+     return true;
+ }
+@@ -568,6 +584,10 @@
+     mGenerateParam->validLogitStart = 0;
+     std::vector<Express::VARP> inputs {hiddenState, mask, inputPos, logitsIndex};
+     inputs.insert(inputs.end(), extraArgs.begin(), extraArgs.end());
++#if PREFILL_REUSE_DIAGNOSTIC
++    ResponseElision::begin(inDecode ? "decode" : "full", seqLen, mContext->all_seq_len, mMeta->previous, mMeta->remove, mMeta.get());
++    ResponseElision::positions(inputPos->readMap<int>(), inputPos->getInfo()->size);
++#endif
+     std::vector<Express::VARP> outputs = selectModule->onForward(inputs);
+ 
+     if (outputs.empty()) {
+@@ -640,7 +660,17 @@
+         }
+     }
+ #endif
++#if PREFILL_REUSE_DIAGNOSTIC
++    if (!ResponseElision::logits(outputs[0]->readMap<float>(), outputs[0]->getInfo()->size)) {
++        mContext->status = LlmStatus::INTERNAL_ERROR; ResponseElision::end(false, mMeta->previous); return {};
++    }
++#endif
+     mMeta->sync();
++#if PREFILL_REUSE_DIAGNOSTIC
++    ResponseElision::end(true, mMeta->previous);
++#endif
++    ++ResponseElision::metrics().full;
++    if (inDecode) ++ResponseElision::metrics().decode;
+     return outputs;
+ }
+ 
+@@ -882,6 +912,7 @@
+ }
+ 
+ std::vector<int> Llm::generate(const std::vector<int>& input_ids, int max_tokens) {
++    ResponseElision::RequestGuard reuseGuard(this, [this](){return mContext->status == LlmStatus::NORMAL_FINISHED || mContext->status == LlmStatus::MAX_TOKENS_FINISHED;});
+     CHECK_LLM_RUNNING_RET(mContext, std::vector<int>());
+     MNN::Express::ExecutorScope s(mExecutor);
+     if (max_tokens < 0) {
+@@ -927,6 +958,61 @@
+             completePrefixWrite();
+             return result;
+         }
++        const auto routeStart = ResponseElision::now();
++        std::shared_ptr<Module> requestTrunk;
++        const bool requested = mConfig->config_.value("prefill_head_elision", false);
++        const bool eligible = requested && mConfig->backend_type() == "cpu" && mBlockSize == 32 &&
++            mConfig->hidden_size() == 1024 && mConfig->layer_nums() == 28 &&
++            !mConfig->reuse_kv() && !mConfig->prompt_cache() && !mAsync &&
++            !mConfig->config_.value("async", false) && !mInSpec && !mPrefixCacheMode &&
++            mValidBlockSize.empty() && mBaseModule == nullptr && mContext->gen_seq_len == 0 &&
++            !mConfig->all_logits() && mConfig->speculative_type().empty() &&
++            !mConfig->has_talker() && !mConfig->has_deepstack() && !mConfig->has_ple() &&
++            !mConfig->is_visual() && !mConfig->is_audio() && !mConfig->kvcache_mmap() &&
++            !mConfig->config_.value("hidden_states", false) &&
++            mMeta->file_flag == KVMeta::NoChange && mMeta->n_reserve == 0 &&
++            mMeta->remove == mMeta->previous &&
++            ResponseElision::bound(this, mModule.get(), mRuntimeManager.get(), mMeta.get(), mConfig->llm_model(), mConfig->llm_weight(), reuseConfigKey(mConfig->config_));
++        ResponseElision::metrics().requested=requested;
++        ResponseElision::metrics().eligible=eligible;
++        ResponseElision::metrics().route_check_us += ResponseElision::now()-routeStart;
++        if (!eligible) ResponseElision::evict(this, "ineligible_or_binding_changed");
++        requestTrunk = eligible ? ResponseElision::cached(this) : nullptr;
++        ResponseElision::metrics().cache_hit = bool(requestTrunk);
++        const auto prepareStart=ResponseElision::now();
++        if (eligible && !requestTrunk) {
++            Module::Config mc; mc.shapeMutable = true; mc.rearrange = true; mc.base = mModule.get();
++            mRuntimeManager->setHintPtr(Interpreter::KVCACHE_INFO, mMeta.get());
++            ResponseElision::Scope scope(mModule.get(), mMeta.get());
++            const auto savedMeta = *mMeta;
++            struct ExternalFileReset {
++                std::shared_ptr<Executor::RuntimeManager> runtime;
++                ~ExternalFileReset() {runtime->setExternalFile("");}
++            } externalReset{mRuntimeManager};
++            // Match the fixed archive's no-exceptions ABI; catch only on exception-enabled builds.
++#if defined(__EXCEPTIONS)
++            try {
++#endif
++                mRuntimeManager->setExternalFile(mConfig->llm_weight());
++                requestTrunk.reset(Module::load({"input_ids", "attention_mask", "position_ids", "logits_index"},
++                    {"hidden_states"}, mConfig->llm_model().c_str(), mRuntimeManager, &mc));
++#if defined(__EXCEPTIONS)
++            } catch (...) {
++                requestTrunk.reset();
++            }
++#endif
++            const bool metaStable = mMeta->previous == savedMeta.previous && mMeta->add == savedMeta.add &&
++                mMeta->remove == savedMeta.remove && mMeta->n_reserve == savedMeta.n_reserve &&
++                mMeta->file_flag == savedMeta.file_flag && mMeta->layer_index == savedMeta.layer_index;
++            if (!scope.passed() || !metaStable) {
++                requestTrunk.reset();
++                *mMeta = savedMeta;
++            }
++            if (requestTrunk) ResponseElision::install(this, requestTrunk, mModule, mRuntimeManager, mMeta, mExecutor);
++        }
++        ResponseElision::metrics().prepare_us += eligible ? ResponseElision::now()-prepareStart : 0;
++        ResponseElision::metrics().prepared=bool(requestTrunk);
++        if (requestTrunk && ResponseElision::metrics().prepared_callback) ResponseElision::metrics().prepared_callback();
+         int total_size = (int)input_ids.size();
+         int loop_size = UP_DIV(total_size, mBlockSize);
+         for (int i = 0; i < loop_size; i++) {
+@@ -940,8 +1026,58 @@
+             if(input_embeds == nullptr) {
+                 return {};
+             }
+-            generate(input_embeds, 0);
+-        }
++            // Explicit output demand: only the whole request's final chunk publishes logits.
++            const bool kvOnly = requestTrunk && i + 1 < loop_size;
++            if (kvOnly) {
++                const int seq = input_embeds->getInfo()->dim[mSeqLenIndex];
++                Timer chunkTimer;
++                mGenerateParam->input_embeds = nullptr;
++                mGenerateParam->outputs.clear();
++                mGenerateParam->validLogitSize = 0;
++                mGenerateParam->validLogitStart = 0;
++                mMeta->add = seq;
++                auto mask = gen_attention_mask(seq);
++                auto position = gen_position_ids(seq);
++#if PREFILL_REUSE_DIAGNOSTIC
++                ResponseElision::begin("trunk", seq, mContext->all_seq_len, mMeta->previous, mMeta->remove, mMeta.get());
++                ResponseElision::positions(position->readMap<int>(), position->getInfo()->size);
++#endif
++                auto hidden = requestTrunk->onForward({input_embeds, mask, position, logitsLastIdx});
++                bool ok = hidden.size() == 1 && !(hidden[0] == nullptr) && hidden[0]->getInfo() &&
++                    hidden[0]->getInfo()->size == seq * mConfig->hidden_size() &&
++                    hidden[0]->getInfo()->type.code == halide_type_float && hidden[0]->getInfo()->type.bits == 32;
++                const float* values = ok ? hidden[0]->readMap<float>() : nullptr;
++                ok = ok && values != nullptr;
++                if (ok) {
++                    const_cast<Tensor*>(hidden[0]->getTensor())->wait(Tensor::MAP_TENSOR_READ, true);
++                    for (int j=0; j<hidden[0]->getInfo()->size; ++j) if (!std::isfinite(values[j])) {ok=false;break;}
++                }
++                if (!ok) {
++                    mContext->status = LlmStatus::INTERNAL_ERROR;
++                    return {}; // Some Attention layers may have mutated KV: never replay full.
++                }
++                mMeta->sync();
++#if PREFILL_REUSE_DIAGNOSTIC
++                ResponseElision::end(true, mMeta->previous);
++#endif
++                ++ResponseElision::metrics().trunk;
++                updateContext(seq, 0);
++                mContext->prompt_len = seq;
++                mContext->prefill_us += chunkTimer.durationInUs();
++                ExecutorScope::Current()->gc();
++                if (mGenerateParam->timeout_ms > 0 && mContext->prefill_us / 1000 >= mGenerateParam->timeout_ms) {
++                    mContext->status = LlmStatus::TIMEOUT;
++                    return mContext->output_tokens;
++                }
++            } else {
++                generate(input_embeds, 0);
++            }
++            if (mContext->status != LlmStatus::RUNNING) return mContext->output_tokens;
++        }
++        // Drop request reference; owner retains the plan until invalidation or destruction.
++        const auto releaseStart=ResponseElision::now();
++        requestTrunk.reset();
++        ResponseElision::metrics().release_us += ResponseElision::now()-releaseStart;
+         completePrefixWrite();
+     } else {
+         // update states
+@@ -1215,6 +1351,7 @@
+ }
+ 
+ Llm::~Llm() {
++    ResponseElision::erase(this);
+ #if DEBUG_MODE == 1
+     if (nullptr != gTimeTraceInfo) {
+         gTimeTraceInfo->dump();
+diff --git a/express/module/StaticModule.cpp b/express/module/StaticModule.cpp
+--- a/express/module/StaticModule.cpp
++++ b/express/module/StaticModule.cpp
+@@ -1,3 +1,5 @@
++#include "prefill_trunk_reuse.hpp"
++#include <cmath>
+ //
+ //  StaticModule.cpp
+ //  MNN
+@@ -189,6 +191,12 @@
+                         }
+                     }
+                 }
++                if (exe == nullptr && ResponseElision::authorized(config.base, backend->type()) &&
++                    op->type() == OpType_Attention && op->main_type() == OpParameter_AttentionParam &&
++                    op->main_as_AttentionParam()->kv_shared_layer_index() < 0) {
++                    bool bridged = cloneBaseExecution(exe, base_executions, op, backend, backupBackend);
++                    ResponseElision::attempt(op->name() ? op->name()->c_str() : nullptr, bridged);
++                }
+                 if (exe == nullptr) {
+                     exe.reset(backend->onCreate({}, {}, op));
+                     if (exe.get() == nullptr) {
+diff --git a/source/backend/cpu/CPUAttention.cpp b/source/backend/cpu/CPUAttention.cpp
+--- a/source/backend/cpu/CPUAttention.cpp
++++ b/source/backend/cpu/CPUAttention.cpp
+@@ -1,3 +1,5 @@
++#include "prefill_trunk_reuse.hpp"
++#include <cmath>
+ //
+ //  CPUAttention.cpp
+ //  MNN
+@@ -350,6 +352,9 @@
+ }
+ 
+ ErrorCode CPUAttention::onExecute(const std::vector<Tensor*>& inputs, const std::vector<Tensor*>& outputs) {
++#if PREFILL_REUSE_DIAGNOSTIC
++    ResponseElision::execute("before", this, mMeta, mKVCacheManager.get(), mKVCacheManager->kvLength(), mMeta ? mMeta->previous : 0, mMeta ? mMeta->add : 0, mMeta ? mMeta->remove : 0, mMeta ? mMeta->n_reserve : 0, mMeta ? mMeta->file_flag : -1, -1);
++#endif
+     auto gcore = static_cast<CPUBackend*>(backend())->functions();
+     auto core = static_cast<CPUBackend*>(backend())->int8Functions();
+     bool outputC4 = TensorUtils::getDescribe(outputs[0])->dimensionFormat == MNN_DATA_FORMAT_NC4HW4;
+@@ -448,6 +453,9 @@
+         mGemmBias.reset(ROUND_UP(ALIMAX(mBlockKV, mHeadDim), hP8) * QUANT_INFO_BYTES);
+         if (!mGemmBias.get()) {
+             MNN_ERROR("Allocate bias buffer failed in CPU Attention\n");
++#if PREFILL_REUSE_DIAGNOSTIC
++    ResponseElision::execute("after", this, mMeta, mKVCacheManager.get(), mKVCacheManager->kvLength(), mMeta ? mMeta->previous : 0, mMeta ? mMeta->add : 0, mMeta ? mMeta->remove : 0, mMeta ? mMeta->n_reserve : 0, mMeta ? mMeta->file_flag : -1, OUT_OF_MEMORY);
++#endif
+             return OUT_OF_MEMORY;
+         }
+         memset(mGemmBias.get(), 0, ROUND_UP(ALIMAX(mBlockKV, mHeadDim), hP8) * QUANT_INFO_BYTES);
+@@ -1110,6 +1118,9 @@
+                      (outputs[0]->length(1) - seqLen) * mHeadDim * mNumHead * mBytes);
+         }
+     }
++#if PREFILL_REUSE_DIAGNOSTIC
++    ResponseElision::execute("after", this, mMeta, mKVCacheManager.get(), mKVCacheManager->kvLength(), mMeta ? mMeta->previous : 0, mMeta ? mMeta->add : 0, mMeta ? mMeta->remove : 0, mMeta ? mMeta->n_reserve : 0, mMeta ? mMeta->file_flag : -1, NO_ERROR);
++#endif
+     return NO_ERROR;
+ }
+ 
+@@ -1117,6 +1128,7 @@
+     if (nullptr == dst) {
+         return true;
+     }
++    if (!ResponseElision::cloneAllowed(mMeta, bn->getMetaPtr(), backend()->type(), bn->type())) return false;
+     auto tmp = new CPUAttention(bn, mKVCache);
+     // Share KV cache when cloning within the same session (same meta pointer)
+     if (bn->getMetaPtr() == mMeta) {
+@@ -1127,6 +1139,11 @@
+             tmp->mIsKVShared = true;
+         }
+     }
++    auto traceParam = op->main_as_AttentionParam();
++    ResponseElision::clone(op->name() ? op->name()->c_str() : nullptr, this, tmp,
++        mMeta, tmp->mMeta, mKVCacheManager.get(), tmp->mKVCacheManager.get(),
++        mKVCacheManager->kvLength(), tmp->mKVCacheManager->kvLength(),
++        traceParam ? traceParam->kv_shared_layer_index() : -2);
+     *dst = tmp;
+     return true;
+ }
+diff --git a/apps/android/prefill_trunk_reuse.hpp b/apps/android/prefill_trunk_reuse.hpp
+new file mode 100644
+--- /dev/null
++++ b/apps/android/prefill_trunk_reuse.hpp
+@@ -0,0 +1,76 @@
++#ifndef PREFILL_RESPONSE_ELISION_HPP
++#define PREFILL_RESPONSE_ELISION_HPP
++#include <MNN/MNNForwardType.h>
++#include <cstdint>
++#include <MNN/expr/Module.hpp>
++#include <memory>
++#include <functional>
++#ifndef PREFILL_REUSE_DIAGNOSTIC
++#define PREFILL_REUSE_DIAGNOSTIC 0
++#endif
++#include <chrono>
++#include <cstdio>
++#include <fstream>
++#include <map>
++#include <mutex>
++#include <set>
++#include <string>
++namespace ResponseElision {
++inline std::string quote(const std::string& v) { std::string r="\""; for (unsigned char c:v) { if(c=='\\'||c=='\"'){r+='\\';r+=c;} else if(c<32){char b[7];std::snprintf(b,7,"\\u%04x",c);r+=b;}else r+=c;} return r+'\"'; }
++inline uint64_t fingerprint(const std::string& path) {std::ifstream f(path,std::ios::binary); if(!f)return 0;uint64_t h=1469598103934665603ULL;char b[8192];while(f){f.read(b,sizeof(b));for(std::streamsize i=0;i<f.gcount();++i){h^=static_cast<unsigned char>(b[i]);h*=1099511628211ULL;}}return f.bad()?0:h;}
++struct Metrics {bool requested=false,eligible=false,prepared=false,cache_hit=false;int trunk=0,full=0,decode=0;int64_t route_check_us=0,prepare_us=0,release_us=0;void(*prepared_callback)()=nullptr;};
++inline Metrics& metrics(){static thread_local Metrics m;return m;}
++inline int64_t now(){return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
++inline void resetMetrics(bool requested){metrics()=Metrics();metrics().requested=requested;}
++
++struct Provenance {const void* base=nullptr;const void* runtime=nullptr;const void* meta=nullptr;std::string model,weight,key;uint64_t graph=0,epoch=0;std::shared_ptr<void> executorStrong,metaStrong,runtimeStrong,baseStrong;std::shared_ptr<MNN::Express::Module> trunk;};
++inline std::map<const void*,Provenance>& owners(){static std::map<const void*,Provenance> m;return m;}
++inline std::mutex& mutex(){static std::mutex m;return m;}
++inline bool& lifecycle(){static thread_local bool gate=false;return gate;}
++inline void event(const char* kind,const void* owner,const Provenance& p,const char* reason){
++#if PREFILL_REUSE_DIAGNOSTIC
++ if(lifecycle())std::printf("{\"event\":\"reuse_event\",\"kind\":%s,\"reason\":%s,\"owner\":%llu,\"base\":%llu,\"runtime\":%llu,\"meta\":%llu,\"trunk\":%llu,\"epoch\":%llu}\n",quote(kind).c_str(),quote(reason).c_str(),(unsigned long long)reinterpret_cast<uintptr_t>(owner),(unsigned long long)reinterpret_cast<uintptr_t>(p.base),(unsigned long long)reinterpret_cast<uintptr_t>(p.runtime),(unsigned long long)reinterpret_cast<uintptr_t>(p.meta),(unsigned long long)reinterpret_cast<uintptr_t>(p.trunk.get()),(unsigned long long)p.epoch);
++#endif
++}
++inline void release(const void* owner,Provenance& old,const char* reason){if(old.trunk){event("evict",owner,old,reason);old.trunk.reset();event("released",owner,old,reason);}old.baseStrong.reset();old.runtimeStrong.reset();old.metaStrong.reset();old.executorStrong.reset();}
++inline void evict(const void* owner,const char* reason){const auto t=now();Provenance old;{std::lock_guard<std::mutex> l(mutex());auto i=owners().find(owner);if(i!=owners().end()){old.base=i->second.base;old.runtime=i->second.runtime;old.meta=i->second.meta;old.epoch=i->second.epoch;old.trunk=std::move(i->second.trunk);old.baseStrong=std::move(i->second.baseStrong);old.runtimeStrong=std::move(i->second.runtimeStrong);old.metaStrong=std::move(i->second.metaStrong);old.executorStrong=std::move(i->second.executorStrong);}}release(owner,old,reason);metrics().release_us+=now()-t;}
++inline void erase(const void* owner){const auto t=now();Provenance old;{std::lock_guard<std::mutex> l(mutex());auto i=owners().find(owner);if(i!=owners().end()){old=std::move(i->second);owners().erase(i);}}release(owner,old,"owner_release");metrics().release_us+=now()-t;}
++inline void bind(const void* owner,const void* base,const void* runtime,const void* meta,const std::string& model,const std::string& weight,const std::string& key){erase(owner);Provenance p;p.base=base;p.runtime=runtime;p.meta=meta;p.model=model;p.weight=weight;p.key=key;p.graph=fingerprint(model);{std::lock_guard<std::mutex> l(mutex());static uint64_t epoch=0;p.epoch=++epoch;owners()[owner]=p;}event("bind",owner,p,"loaded");}
++inline bool bound(const void* owner,const void* base,const void* runtime,const void* meta,const std::string& model,const std::string& weight,const std::string& key){Provenance p;{std::lock_guard<std::mutex> l(mutex());auto i=owners().find(owner);if(i==owners().end())return false;p=i->second;}return p.base==base&&p.runtime==runtime&&p.meta==meta&&p.model==model&&p.weight==weight&&p.key==key&&p.graph&&p.graph==fingerprint(model);}
++inline std::shared_ptr<MNN::Express::Module> cached(const void* owner){Provenance p;{std::lock_guard<std::mutex> l(mutex());auto i=owners().find(owner);if(i==owners().end())return {};p=i->second;}if(p.trunk)event("hit",owner,p,"binding_validated");return p.trunk;}
++inline void install(const void* owner,std::shared_ptr<MNN::Express::Module> module,std::shared_ptr<void> bs,std::shared_ptr<void> rs,std::shared_ptr<void> ms,std::shared_ptr<void> es){Provenance p;{std::lock_guard<std::mutex> l(mutex());auto i=owners().find(owner);if(i==owners().end()||i->second.trunk)return;i->second.trunk=std::move(module);i->second.baseStrong=std::move(bs);i->second.runtimeStrong=std::move(rs);i->second.metaStrong=std::move(ms);i->second.executorStrong=std::move(es);p=i->second;}event("prepare",owner,p,"scope_28_and_meta_stable");}
++struct RequestGuard {const void* owner;std::function<bool()> ok;RequestGuard(const void* p,std::function<bool()> f):owner(p),ok(std::move(f)){}~RequestGuard(){if(!ok())evict(owner,"request_not_successful");}};
++#if PREFILL_REUSE_DIAGNOSTIC
++inline std::map<uintptr_t,std::string>& names(){static std::map<uintptr_t,std::string> n;return n;}
++#endif
++struct Scope {const void* base;const void* meta;Scope* previous;bool valid=true;std::map<std::string,uintptr_t> managers;std::map<std::string,int> attempts;Scope(const void* b,const void* m);~Scope();bool passed()const {std::set<uintptr_t> ids;for(auto& p:managers)ids.insert(p.second);return valid&&managers.size()==28&&attempts.size()==28&&ids.size()==28;} };
++inline Scope*& current(){static thread_local Scope* s=nullptr;return s;}
++inline Scope::Scope(const void* b,const void* m):base(b),meta(m),previous(current()){if(previous)valid=false;current()=this;}
++inline Scope::~Scope(){current()=previous;}
++inline bool cpuType(int type){return type==MNN_FORWARD_CPU||type==MNN_FORWARD_CPU_EXTENSION;}
++inline bool authorized(const void* base,int type){auto s=current();return s&&s->valid&&s->base==base&&cpuType(type);}
++inline bool cloneAllowed(const void* sourceMeta,const void* targetMeta,int sourceType,int targetType){auto s=current();return !s||(s->valid&&s->meta==sourceMeta&&s->meta==targetMeta&&cpuType(sourceType)&&cpuType(targetType)&&sourceType==targetType);}
++inline void attempt(const char* name,bool ok){auto s=current();if(!s)return;auto n=std::string(name?name:"");++s->attempts[n];s->valid=s->valid&&ok&&s->attempts[n]==1;}
++inline void clone(const char* n,const void* source,const void* target,const void* sm,const void* tm,const void* sk,const void* tk,int sl,int tl,int shared){
++
++#if PREFILL_REUSE_DIAGNOSTIC
++ {std::lock_guard<std::mutex> l(mutex());names()[reinterpret_cast<uintptr_t>(source)]=n?n:"";names()[reinterpret_cast<uintptr_t>(target)]=n?n:"";}
++#endif
++ auto s=current();if(!s)return;std::string name=n?n:"";s->valid=s->valid&&sm==s->meta&&tm==s->meta&&sk==tk&&sl==tl&&shared<0;
++ auto i=s->managers.find(name);if(i!=s->managers.end()&&i->second!=reinterpret_cast<uintptr_t>(tk))s->valid=false;s->managers[name]=reinterpret_cast<uintptr_t>(tk);
++#if PREFILL_REUSE_DIAGNOSTIC
++ if(lifecycle())std::printf("{\"event\":\"reuse_clone\",\"name\":%s,\"source_manager\":%llu,\"target_manager\":%llu,\"source_meta\":%llu,\"target_meta\":%llu,\"source_kv_length\":%d,\"target_kv_length\":%d}\n",quote(name).c_str(),(unsigned long long)reinterpret_cast<uintptr_t>(sk),(unsigned long long)reinterpret_cast<uintptr_t>(tk),(unsigned long long)reinterpret_cast<uintptr_t>(sm),(unsigned long long)reinterpret_cast<uintptr_t>(tm),sl,tl);
++#endif
++}
++
++#if PREFILL_REUSE_DIAGNOSTIC
++struct Trace {int step=0;bool active=false;std::string role,dir;};
++inline Trace& trace(){static thread_local Trace t;return t;}
++inline void begin(const char* role,int seq,int context,size_t previous,size_t remove,const void* meta){auto& t=trace();if(t.dir.empty())return;t.active=true;t.role=role;std::printf("{\"event\":\"response_forward_begin\",\"step\":%d,\"role\":%s,\"seq\":%d,\"context\":%d,\"meta_previous\":%zu,\"meta_remove\":%zu,\"meta\":%llu}\n",t.step,quote(t.role).c_str(),seq,context,previous,remove,(unsigned long long)reinterpret_cast<uintptr_t>(meta));}
++inline void end(bool ok,size_t previous){auto& t=trace();if(!t.active)return;std::printf("{\"event\":\"response_forward_end\",\"step\":%d,\"role\":%s,\"ok\":%s,\"meta_previous\":%zu}\n",t.step,quote(t.role).c_str(),ok?"true":"false",previous);t.active=false;++t.step;std::fflush(stdout);}
++inline void execute(const char* boundary,const void* exe,const void* meta,const void* manager,int length,size_t previous,size_t add,size_t remove,int reserve,int file,int error){auto& t=trace();if(!t.active)return;std::string n;{std::lock_guard<std::mutex> l(mutex());n=names()[reinterpret_cast<uintptr_t>(exe)];}std::printf("{\"event\":\"response_attention\",\"step\":%d,\"boundary\":%s,\"name\":%s,\"execution\":%llu,\"meta\":%llu,\"manager\":%llu,\"kv_length\":%d,\"meta_previous\":%zu,\"meta_add\":%zu,\"meta_remove\":%zu,\"meta_n_reserve\":%d,\"meta_file_flag\":%d,\"error_code\":%d}\n",t.step,quote(boundary).c_str(),quote(n).c_str(),(unsigned long long)reinterpret_cast<uintptr_t>(exe),(unsigned long long)reinterpret_cast<uintptr_t>(meta),(unsigned long long)reinterpret_cast<uintptr_t>(manager),length,previous,add,remove,reserve,file,error);}
++inline void positions(const int* p,size_t count){auto& t=trace();if(!t.active)return;std::printf("{\"event\":\"response_positions\",\"step\":%d,\"values\":[",t.step);for(size_t i=0;i<count;++i)std::printf("%s%d",i?",":"",p[i]);std::printf("]}\n");}
++inline bool logits(const float* p,size_t count){auto& t=trace();if(t.dir.empty())return true;auto file="output-step"+std::to_string(t.step)+".f32";auto path=t.dir+"/"+file;std::ofstream f(path,std::ios::binary);f.write(reinterpret_cast<const char*>(p),count*sizeof(float));std::printf("{\"event\":\"response_logits\",\"step\":%d,\"count\":%zu,\"file\":%s,\"path\":%s}\n",t.step,count,quote(file).c_str(),quote(path).c_str());return bool(f);}
++#endif
++}
++#endif
+diff --git a/apps/android/prefill_trunk_reuse_worker.cpp b/apps/android/prefill_trunk_reuse_worker.cpp
+new file mode 100644
+--- /dev/null
++++ b/apps/android/prefill_trunk_reuse_worker.cpp
+@@ -0,0 +1,91 @@
++// No operator tracing: response costs include request-local trunk construction.
++#include "llm/llm.hpp"
++#include "prefill_trunk_reuse.hpp"
++#include "rapidjson/document.h"
++#include "rapidjson/writer.h"
++#include "rapidjson/stringbuffer.h"
++#include <map>
++#include <atomic>
++#include <thread>
++#include <fstream>
++#include <iostream>
++#include <iterator>
++#include <memory>
++#include <sstream>
++#include <vector>
++using namespace MNN; using namespace MNN::Transformer;
++struct Memory {long rss=-1,hwm=-1;};
++static Memory memory(){std::ifstream f("/proc/self/status");std::string line;Memory m;while(std::getline(f,line)){std::istringstream s(line);std::string k,u;long n;if(s>>k>>n>>u){if(k=="VmRSS:")m.rss=n;if(k=="VmHWM:")m.hwm=n;}}return m;}
++static Memory preparedMemory;
++static void prepared(){preparedMemory=memory();}
++static std::string read(const char* p){std::ifstream f(p);return std::string(std::istreambuf_iterator<char>(f),{});}
++static void ids(const std::vector<int>& x){std::printf("[");for(size_t i=0;i<x.size();++i)std::printf("%s%d",i?",":"",x[i]);std::printf("]");}
++static const char* status(LlmStatus s){switch(s){case LlmStatus::NORMAL_FINISHED:return "normal_finished";case LlmStatus::MAX_TOKENS_FINISHED:return "max_tokens_finished";case LlmStatus::INTERNAL_ERROR:return "internal_error";case LlmStatus::TIMEOUT:return "timeout";case LlmStatus::RUNNING:return "running";case LlmStatus::USER_CANCEL:return "user_cancel";default:return "not_loaded";}}
++static std::string json(const rapidjson::Value& value){rapidjson::StringBuffer b;rapidjson::Writer<rapidjson::StringBuffer> writer(b);value.Accept(writer);return b.GetString();}
++struct Owner {std::unique_ptr<Llm> llm;bool loaded=false;};
++static void callbacks(Llm* llm){
++#if PREFILL_REUSE_DIAGNOSTIC
++ llm->setDebugCallback([](const std::vector<Tensor*>&,const OperatorInfo* i){if(ResponseElision::trace().active&&i&&i->name()=="/lm/lm_head/Linear")std::printf("{\"event\":\"response_head\",\"step\":%d,\"boundary\":\"before\"}\n",ResponseElision::trace().step);return true;},[](const std::vector<Tensor*>&,const OperatorInfo* i){if(ResponseElision::trace().active&&i&&i->name()=="/lm/lm_head/Linear")std::printf("{\"event\":\"response_head\",\"step\":%d,\"boundary\":\"after\"}\n",ResponseElision::trace().step);return true;});
++#endif
++}
++static int step(){
++#if PREFILL_REUSE_DIAGNOSTIC
++ return ResponseElision::trace().step;
++#else
++ return -1;
++#endif
++}
++int main(int argc,char** argv){
++ if(argc!=4&&argc!=5){std::cerr<<"usage: worker config fixture outputdir [--sample-rss]\n";return 2;}
++ const bool sample=argc==5&&std::string(argv[4])=="--sample-rss";if(argc==5&&!sample)return 2;
++ rapidjson::Document fixture;auto raw=read(argv[2]);fixture.Parse(raw.c_str());
++ if(fixture.HasParseError()||!fixture.IsObject()||!fixture.HasMember("operations")||!fixture["operations"].IsArray()||fixture["operations"].Empty())return 3;
++ std::map<std::string,Owner> owners;
++#if PREFILL_REUSE_DIAGNOSTIC
++ ResponseElision::lifecycle()=true;ResponseElision::trace().dir=argv[3];
++#endif
++ int index=0;bool all=true;
++ for(const auto& c:fixture["operations"].GetArray()){
++  if(!c.IsObject()||!c.HasMember("action")||!c["action"].IsString()||!c.HasMember("instance")||!c["instance"].IsString())return 6;
++  const std::string action=c["action"].GetString(),instance=c["instance"].GetString();
++  if(action=="create"){
++   if(owners.count(instance))return 12;Owner o;o.llm.reset(Llm::createLLM(argv[1]));if(!o.llm)return 4;
++   o.llm->set_config(R"({"prefill_head_elision":false,"enable_debug":false,"sampler_type":"greedy","async":false,"reuse_kv":false,"prompt_cache":false,"jinja":{"context":{"enable_thinking":false}}})");
++#if PREFILL_REUSE_DIAGNOSTIC
++   o.llm->set_config(R"({"enable_debug":true,"prefill_reuse_lifecycle":true})");
++#endif
++   if(c.HasMember("patch"))o.llm->set_config(json(c["patch"]));callbacks(o.llm.get());owners[instance]=std::move(o);
++  }else if(action=="destroy"){
++   if(!owners.count(instance))return 13;owners.erase(instance);
++  }else if(action=="config"){
++   if(!owners.count(instance)||!c.HasMember("patch")||!c["patch"].IsObject())return 14;owners[instance].llm->set_config(json(c["patch"]));
++  }else if(action=="load"){
++   if(!owners.count(instance)||!c.HasMember("expected")||!c["expected"].IsBool())return 15;
++   auto& o=owners[instance];auto t=ResponseElision::now();o.loaded=o.llm->load();auto m=memory();
++   std::printf("{\"event\":\"reuse_operation\",\"action\":\"load\",\"instance\":%s,\"expected\":%s,\"actual\":%s,\"ok\":%s,\"load_wall_us\":%lld,\"rss_kb\":%ld,\"hwm_kb\":%ld}\n",ResponseElision::quote(instance).c_str(),c["expected"].GetBool()?"true":"false",o.loaded?"true":"false",o.loaded==c["expected"].GetBool()?"true":"false",(long long)(ResponseElision::now()-t),m.rss,m.hwm);std::fflush(stdout);
++   if(o.loaded!=c["expected"].GetBool())return 16;continue;
++  }else if(action!="request")return 17;
++  if(action!="request"){std::printf("{\"event\":\"reuse_operation\",\"action\":%s,\"instance\":%s,\"ok\":true}\n",ResponseElision::quote(action).c_str(),ResponseElision::quote(instance).c_str());std::fflush(stdout);continue;}
++  if(!owners.count(instance)||!owners[instance].loaded)return 18;auto& llm=owners[instance].llm;
++  if(!c.HasMember("name")||!c["name"].IsString()||!c.HasMember("mode")||!c["mode"].IsString()||!c.HasMember("phase")||!c["phase"].IsString()||!c.HasMember("max_new_tokens")||!c["max_new_tokens"].IsInt())return 6;
++  const std::string mode=c["mode"].GetString();if(mode!="baseline"&&mode!="candidate"&&mode!="unchanged")return 6;
++  bool text=c.HasMember("prompt");std::vector<int> input;
++  if(text){if(!c["prompt"].IsString())return 7;input=llm->tokenizer_encode(llm->apply_chat_template(c["prompt"].GetString()));}
++  else {if(!c.HasMember("input_ids")||!c["input_ids"].IsArray())return 8;for(auto& v:c["input_ids"].GetArray()){if(!v.IsInt())return 9;input.push_back(v.GetInt());}}
++  if(input.empty()||input.size()>512||c["max_new_tokens"].GetInt()<1||c["max_new_tokens"].GetInt()>64)return 10;
++  std::printf("{\"event\":\"request_begin\",\"request_index\":%d,\"instance\":%s,\"name\":%s,\"mode\":%s,\"phase\":%s,\"first_step\":%d,\"max_new_tokens\":%d,\"input_ids\":",index,ResponseElision::quote(instance).c_str(),ResponseElision::quote(c["name"].GetString()).c_str(),ResponseElision::quote(mode).c_str(),ResponseElision::quote(c["phase"].GetString()).c_str(),step(),c["max_new_tokens"].GetInt());ids(input);std::printf("}\n");std::fflush(stdout);
++  ResponseElision::resetMetrics(mode=="candidate");preparedMemory=Memory();if(sample)ResponseElision::metrics().prepared_callback=prepared;
++  auto before=memory();std::atomic<bool> stop(false);std::atomic<long> peak(before.rss);std::atomic<int> samples(0);std::thread sampler;
++  if(sample)sampler=std::thread([&](){while(!stop.load()){auto m=memory();if(m.rss>peak.load())peak.store(m.rss);++samples;std::this_thread::sleep_for(std::chrono::milliseconds(10));}});
++  std::ostringstream stream;const auto requestStart=ResponseElision::now();
++  if(mode!="unchanged")llm->set_config(mode=="candidate"?R"({"prefill_head_elision":true})":R"({"prefill_head_elision":false})");
++  if(c.HasMember("patch")){if(!c["patch"].IsObject())return 19;llm->set_config(json(c["patch"]));}
++  llm->reset();
++  if(text)llm->response(std::string(c["prompt"].GetString()),&stream,"",c["max_new_tokens"].GetInt());else llm->response(input,&stream,"",c["max_new_tokens"].GetInt());
++  const auto wall=ResponseElision::now()-requestStart;
++  if(sample){stop=true;sampler.join();}auto after=memory();if(after.rss>peak.load())peak=after.rss;
++  const auto* ctx=llm->getContext();const auto m=ResponseElision::metrics();bool ok=ctx->status==LlmStatus::NORMAL_FINISHED||ctx->status==LlmStatus::MAX_TOKENS_FINISHED;
++  std::printf("{\"event\":\"request_end\",\"request_index\":%d,\"instance\":%s,\"name\":%s,\"mode\":%s,\"phase\":%s,\"last_step_exclusive\":%d,\"cache_hit\":%s,\"ok\":%s,\"status\":%s,\"status_code\":%d,\"all_seq_len\":%d,\"prompt_len\":%d,\"requested\":%s,\"eligible\":%s,\"prepared\":%s,\"trunk_count\":%d,\"full_count\":%d,\"decode_count\":%d,\"route_check_us\":%lld,\"prepare_us\":%lld,\"release_us\":%lld,\"request_wall_us\":%lld,\"native_prefill_us\":%lld,\"native_decode_us\":%lld,\"native_sample_us\":%lld,\"rss_before_kb\":%ld,\"rss_after_kb\":%ld,\"hwm_after_kb\":%ld,\"prepared_rss_kb\":%ld,\"prepared_hwm_kb\":%ld,\"sample_peak_rss_kb\":%ld,\"sample_count\":%d,\"text\":%s,\"stream_text\":%s,\"output_ids\":",index,ResponseElision::quote(instance).c_str(),ResponseElision::quote(c["name"].GetString()).c_str(),ResponseElision::quote(mode).c_str(),ResponseElision::quote(c["phase"].GetString()).c_str(),step(),m.cache_hit?"true":"false",ok?"true":"false",ResponseElision::quote(status(ctx->status)).c_str(),int(ctx->status),ctx->all_seq_len,ctx->prompt_len,m.requested?"true":"false",m.eligible?"true":"false",m.prepared?"true":"false",m.trunk,m.full,m.decode,(long long)m.route_check_us,(long long)m.prepare_us,(long long)m.release_us,(long long)wall,(long long)ctx->prefill_us,(long long)ctx->decode_us,(long long)ctx->sample_us,before.rss,after.rss,after.hwm,preparedMemory.rss,preparedMemory.hwm,peak.load(),samples.load(),ResponseElision::quote(ctx->generate_str).c_str(),ResponseElision::quote(stream.str()).c_str());ids(ctx->output_tokens);std::printf("}\n");std::fflush(stdout);all=all&&ok;++index;
++ }
++ owners.clear();std::printf("{\"event\":\"worker_complete\",\"requests\":%d,\"ok\":%s}\n",index,all?"true":"false");return all?0:11;
++}

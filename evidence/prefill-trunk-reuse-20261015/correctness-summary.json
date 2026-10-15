@@ -1,0 +1,23 @@
+{
+  "diagnostic_requests": 24,
+  "diagnostic_forwards": 99,
+  "full_forwards": 83,
+  "trunk_forwards": 16,
+  "attention_boundary_records": 5544,
+  "full_logit_pairs": 51,
+  "floats_per_pair": 151936,
+  "all_finite_byte_identical": true,
+  "scenarios": [
+    "reset hit",
+    "off/on",
+    "configuration invalidation and reload recovery",
+    "two live instance meta/KV separation",
+    "cached owner destroy then other owner hit",
+    "populated-cache direct successful reload"
+  ],
+  "coherent_negative_checks_rejected": 2,
+  "failed_reload_limitation": "missing graph config had already cleared cache; no populated-cache failed-load claim",
+  "released_meaning": "registry reference removed, not proof of physical Module destruction",
+  "raw_device_identity_logs_or_weights_included": false,
+  "default_phone_chat_switched": false
+}

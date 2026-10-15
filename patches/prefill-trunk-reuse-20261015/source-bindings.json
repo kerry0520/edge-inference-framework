@@ -1,0 +1,43 @@
+{
+  "source_base": "alibaba/MNN 3.6.1 d407447ed56c4121a11ccbd266dc184ca1ead0c2 plus pinned project llm guard",
+  "patch_sha256": "45518a5785e6b395ad6c03320ba6e12cfd56f2a77b2c079a7c673b4accd2456a",
+  "files": [
+    {
+      "path": "transformers/llm/engine/src/llm.cpp",
+      "preimage_sha256": "f9ba43aa7ed1ae183fbf31b40ca14570ed55493cbd4a99e88946863148e30347",
+      "expected_sha256": "0c378976ca895e291bf49edc4c5d2d904d1eecd85dbd07b43c9ed4adf3346a75",
+      "reconstructed_sha256": "0c378976ca895e291bf49edc4c5d2d904d1eecd85dbd07b43c9ed4adf3346a75",
+      "exact_equal": true
+    },
+    {
+      "path": "express/module/StaticModule.cpp",
+      "preimage_sha256": "669fb46f74aa61637dd8f2b35a5896621b49705b7f9d9559ded3608f75f8f70e",
+      "expected_sha256": "9017cb2bbdfd4832a36d4b155fec4dd090802569ec658a1998d70d0232e55a66",
+      "reconstructed_sha256": "9017cb2bbdfd4832a36d4b155fec4dd090802569ec658a1998d70d0232e55a66",
+      "exact_equal": true
+    },
+    {
+      "path": "source/backend/cpu/CPUAttention.cpp",
+      "preimage_sha256": "74af59a289db13a48948a1318c1b1bcef8fd3e347dd5921a5a1c259ac3cb0b4d",
+      "expected_sha256": "cac0a45a8aceef1b0b6a792b2c1d3a70cc707b7f49496089148223f6a7465513",
+      "reconstructed_sha256": "cac0a45a8aceef1b0b6a792b2c1d3a70cc707b7f49496089148223f6a7465513",
+      "exact_equal": true
+    },
+    {
+      "path": "apps/android/prefill_trunk_reuse.hpp",
+      "preimage_sha256": null,
+      "expected_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+      "reconstructed_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+      "exact_equal": true
+    },
+    {
+      "path": "apps/android/prefill_trunk_reuse_worker.cpp",
+      "preimage_sha256": null,
+      "expected_sha256": "4416471d338a02d7fe8ad4dbac2863b9aedba83111d0d4e591db716512567b3c",
+      "reconstructed_sha256": "4416471d338a02d7fe8ad4dbac2863b9aedba83111d0d4e591db716512567b3c",
+      "exact_equal": true
+    }
+  ],
+  "source_reconstruction_passed": true,
+  "raw_local_paths_excluded": true
+}

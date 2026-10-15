@@ -1,0 +1,257 @@
+{
+  "schema": "persistent-trunk-public-summary-v1",
+  "counts": {
+    "requests": 56,
+    "full_forwards": 688,
+    "trunk_forwards": 184,
+    "decode_forwards": 448
+  },
+  "performance_requests": 52,
+  "memory_requests": 4,
+  "performance": {
+    "33": {
+      "process_means": [
+        {
+          "process_index": 0,
+          "mode": "baseline",
+          "request_count": 4,
+          "wall_mean_us": 298296.25,
+          "prefill_mean_us": 134896,
+          "prepare_mean_us": 0,
+          "route_check_mean_us": 1,
+          "release_mean_us": 1.5
+        },
+        {
+          "process_index": 1,
+          "mode": "candidate",
+          "request_count": 4,
+          "wall_mean_us": 280130,
+          "prefill_mean_us": 118270.5,
+          "prepare_mean_us": 0,
+          "route_check_mean_us": 816.25,
+          "release_mean_us": 0.25
+        },
+        {
+          "process_index": 2,
+          "mode": "candidate",
+          "request_count": 4,
+          "wall_mean_us": 279273,
+          "prefill_mean_us": 118113.75,
+          "prepare_mean_us": 0.25,
+          "route_check_mean_us": 865.25,
+          "release_mean_us": 0.5
+        },
+        {
+          "process_index": 3,
+          "mode": "baseline",
+          "request_count": 4,
+          "wall_mean_us": 297701.5,
+          "prefill_mean_us": 137078.75,
+          "prepare_mean_us": 0,
+          "route_check_mean_us": 0.5,
+          "release_mean_us": 1.25
+        }
+      ],
+      "baseline_mean_us": 297998.875,
+      "candidate_mean_us": 279701.5,
+      "candidate_minus_baseline_us": -18297.375,
+      "wall_saving_percent": 6.14008190467162,
+      "baseline_process_spread_us": [
+        297701.5,
+        298296.25
+      ],
+      "candidate_process_spread_us": [
+        279273,
+        280130
+      ],
+      "same_generation": true
+    },
+    "128": {
+      "process_means": [
+        {
+          "process_index": 0,
+          "mode": "baseline",
+          "request_count": 4,
+          "wall_mean_us": 647321.75,
+          "prefill_mean_us": 478749.75,
+          "prepare_mean_us": 0,
+          "route_check_mean_us": 0,
+          "release_mean_us": 1.25
+        },
+        {
+          "process_index": 1,
+          "mode": "candidate",
+          "request_count": 4,
+          "wall_mean_us": 651506.25,
+          "prefill_mean_us": 481202.5,
+          "prepare_mean_us": 0.5,
+          "route_check_mean_us": 867.5,
+          "release_mean_us": 0.5
+        },
+        {
+          "process_index": 2,
+          "mode": "candidate",
+          "request_count": 4,
+          "wall_mean_us": 641396.5,
+          "prefill_mean_us": 473992.25,
+          "prepare_mean_us": 0.25,
+          "route_check_mean_us": 873.25,
+          "release_mean_us": 0.5
+        },
+        {
+          "process_index": 3,
+          "mode": "baseline",
+          "request_count": 4,
+          "wall_mean_us": 670415.25,
+          "prefill_mean_us": 501799.75,
+          "prepare_mean_us": 0,
+          "route_check_mean_us": 0,
+          "release_mean_us": 0.75
+        }
+      ],
+      "baseline_mean_us": 658868.5,
+      "candidate_mean_us": 646451.375,
+      "candidate_minus_baseline_us": -12417.125,
+      "wall_saving_percent": 1.8846135457985926,
+      "baseline_process_spread_us": [
+        647321.75,
+        670415.25
+      ],
+      "candidate_process_spread_us": [
+        641396.5,
+        651506.25
+      ],
+      "same_generation": true
+    },
+    "512": {
+      "process_means": [
+        {
+          "process_index": 0,
+          "mode": "baseline",
+          "request_count": 4,
+          "wall_mean_us": 2490977.75,
+          "prefill_mean_us": 2292920.75,
+          "prepare_mean_us": 0,
+          "route_check_mean_us": 0.25,
+          "release_mean_us": 2
+        },
+        {
+          "process_index": 1,
+          "mode": "candidate",
+          "request_count": 4,
+          "wall_mean_us": 2422539.75,
+          "prefill_mean_us": 2210367.25,
+          "prepare_mean_us": 0.25,
+          "route_check_mean_us": 1123,
+          "release_mean_us": 0.75
+        },
+        {
+          "process_index": 2,
+          "mode": "candidate",
+          "request_count": 4,
+          "wall_mean_us": 2479101.25,
+          "prefill_mean_us": 2240835.5,
+          "prepare_mean_us": 0.25,
+          "route_check_mean_us": 1172,
+          "release_mean_us": 0.5
+        },
+        {
+          "process_index": 3,
+          "mode": "baseline",
+          "request_count": 4,
+          "wall_mean_us": 2632585.75,
+          "prefill_mean_us": 2397006.25,
+          "prepare_mean_us": 0,
+          "route_check_mean_us": 0.75,
+          "release_mean_us": 1.25
+        }
+      ],
+      "baseline_mean_us": 2561781.75,
+      "candidate_mean_us": 2450820.5,
+      "candidate_minus_baseline_us": -110961.25,
+      "wall_saving_percent": 4.331409184252328,
+      "baseline_process_spread_us": [
+        2490977.75,
+        2632585.75
+      ],
+      "candidate_process_spread_us": [
+        2422539.75,
+        2479101.25
+      ],
+      "same_generation": true
+    }
+  },
+  "cold_performance": [
+    {
+      "process_index": 0,
+      "mode": "baseline",
+      "input_length": 33,
+      "wall_us": 349012,
+      "prepare_us": 0,
+      "cache_hit": false,
+      "warmed_prepare_mean_us": 0
+    },
+    {
+      "process_index": 1,
+      "mode": "candidate",
+      "input_length": 33,
+      "wall_us": 341160,
+      "prepare_us": 10800,
+      "cache_hit": false,
+      "warmed_prepare_mean_us": 0.25
+    },
+    {
+      "process_index": 2,
+      "mode": "candidate",
+      "input_length": 33,
+      "wall_us": 350960,
+      "prepare_us": 10471,
+      "cache_hit": false,
+      "warmed_prepare_mean_us": 0.25
+    },
+    {
+      "process_index": 3,
+      "mode": "baseline",
+      "input_length": 33,
+      "wall_us": 345417,
+      "prepare_us": 0,
+      "cache_hit": false,
+      "warmed_prepare_mean_us": 0
+    }
+  ],
+  "memory": {
+    "cold": {
+      "baseline_peak_rss_kb": 671624,
+      "candidate_peak_rss_kb": 680308,
+      "peak_candidate_minus_baseline_kb": 8684,
+      "baseline_after_rss_kb": 618756,
+      "candidate_after_rss_kb": 628000,
+      "after_candidate_minus_baseline_kb": 9244,
+      "baseline_hwm_kb": 896904,
+      "candidate_hwm_kb": 897156,
+      "baseline_samples": 211,
+      "candidate_samples": 200,
+      "same_generation": true
+    },
+    "warm": {
+      "baseline_peak_rss_kb": 663000,
+      "candidate_peak_rss_kb": 672232,
+      "peak_candidate_minus_baseline_kb": 9232,
+      "baseline_after_rss_kb": 618508,
+      "candidate_after_rss_kb": 628024,
+      "after_candidate_minus_baseline_kb": 9516,
+      "baseline_hwm_kb": 896904,
+      "candidate_hwm_kb": 897156,
+      "baseline_samples": 228,
+      "candidate_samples": 213,
+      "same_generation": true
+    }
+  },
+  "statistic": "Each length: average four measured requests per process; average two baseline process means and two candidate process means. Process order B,C,C,B only; no independent ABBA-block inference. Cold warmups excluded.",
+  "limits": [
+    "Extracted records permit arithmetic, route/count, generation-consistency and schema checks; they do not independently establish device identity, actual source execution or complete logits correctness.",
+    "One fixed Android CPU/model/MNN configuration and fixed synthetic input IDs; no general speedup or quality claim.",
+    "Request wall includes set_config and reset.",
+    "RSS sampled every 10 ms for separate memory runs is an estimate for the whole process; HWM includes model loading and prior allocations."
+  ]
+}
