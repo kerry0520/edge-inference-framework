@@ -13,7 +13,7 @@
 - 实际算子、W4/W8 计算路径和执行准备/并行区域观察。
 - 实验原型：非末 prefill 块以 `hidden_states` 为输出，保留全部 Transformer/Attention，省掉词表投影。
 
-**执行计划优化状态（2026-10-15）**：隔离候选已验证同实例主干计划复用：24次诊断请求，51对完整词表分数逐字节一致，覆盖KV重置、配置失效、双实例隔离、带缓存析构及直接成功重载。去观测的四进程B,C,C,B组合对照中，33/128/512-token后续请求用时均值分别下降6.14%/1.88%/4.33%；128进程范围重叠。组合是“省略非末块词表输出＋保留主干计划”，不能单独归因缓存。采样峰值RSS冷/暖增加约8.48/9.02MiB。默认聊天入口未切换，固定设备/模型/配置以外仍需验证。
+**执行计划优化状态（2026-10-15）**：限定CPU配置的主干计划生命周期、完整logits与成本验收完成后，现已接入显式可选聊天入口 `--mode full --stats --prefill-plan-cache`。自然六轮开关配对的输入/回答一致，/new、短输入与预算拒绝保留计划，真实CLI自动发现/流式输出/正常退出通过；默认入口不启用。新入口完整重算消息历史的KV，执行计划另行复用，总部署预算512token。之前四进程组合性能对照33/128/512均值改善6.14%/1.88%/4.33%，128范围重叠且不能归因缓存单项，采样峰值RSS冷/暖增加8.48/9.02MiB；本次入口回归不新增速度结论。
 
 ## 主要入口
 
@@ -75,3 +75,11 @@ python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 请求成本阶段：[优化成本与请求用时](docs/Android优化成本与请求用时-20261014.md)，[48条测量及离线复算](evidence/prefill-cost-20261014/README.md)。
 
 执行计划复用阶段：[计划与每题KV的寿命](docs/Android执行计划复用与请求状态-20261015.md)，[56条请求记录及标准库复算](evidence/prefill-trunk-reuse-20261015/README.md)，[冻结补丁](patches/prefill-trunk-reuse-20261015/README.md)。
+
+## 可选主干计划复用聊天
+
+```powershell
+python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --max-new-tokens 64
+```
+
+以上用于已配置设备与固定构建；预算超限可`/new`，消息历史不会自动截断。`/stats`中复用token指KV，计划状态单独显示。详见[使用与原理](docs/Android可选执行计划缓存聊天-20261015.md)及[入口验收简结](evidence/plan-cache-chat-20261015/README.md)。

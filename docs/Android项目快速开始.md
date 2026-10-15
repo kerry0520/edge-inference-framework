@@ -66,3 +66,17 @@ python scripts/android/phone_chat.py --stats --mode kv --prompt "2+10等于几�
 你当前要抓住的关系是：消息先编码成token，LLM决定这轮哪些位置要算，MNN执行相应张量运算，再生成和返回文字。跨轮KV减少的是要重新输入的计算位置，并没有绕过MNN模型执行链。
 
 2026-10-13新增[统计worker构建选择](Android统计worker构建选择-20261013.md)：例如`python scripts/android/phone_chat.py --stats --mode kv --stats-build-tag worker-choice-20261013-v1`。只改变所选worker构建，不更换模型；仅支持stats full/kv。旧V3ZIP仍冻结在上一版本，新代码与4新实机证据另存Git。
+
+## 可选：完整历史重算＋主干执行计划复用（2026-10-15）
+
+在本项目已配置的手机与构建环境中：
+
+```powershell
+python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --max-new-tokens 64
+```
+
+消息历史仍保留，每轮KV按完整历史重算；优化复用的是主干Module计划。`/stats`会另外显示“首次准备”“已复用”或“短输入直接完整执行”。上方复用token计数指KV，本模式为0不代表计划没命中。
+
+这个可选入口默认部署总预算512token，包含模板输入和生成预算；超过会拒绝并保留历史，可`/new`重开。仅支持full＋stats，不能与kv/query或stats-build-tag同时选择。不开开关时，默认入口和预算仍按原配置运行。
+
+当前仅本机构建、固定MNN/Qwen3-0.6B/CPU配置验收，公开仓库不包含手机模型与编译库。详细职责与验收范围见[从聊天开关到手机执行计划](Android可选执行计划缓存聊天-20261015.md)。
