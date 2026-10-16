@@ -1,0 +1,25 @@
+{
+  "accepted_for_metadata_handoff": true,
+  "source_files": {
+    "scripts/android/phone_source_candidate.py": "10dd617d4fe14eac79cf235e06845b6dd6e23c7d1c08b99e235991ff3c43aae7",
+    "tests/android/test_phone_source_candidate.py": "f34fd86b8300b5c48ee7d53b3faafafb865085b37ce747decb391f918f595261"
+  },
+  "unit_tests_passed": 16,
+  "unit_tests_skipped": 0,
+  "real_metadata_cli_calls": 2,
+  "real_asset_bindings": 4,
+  "negative_cases_rejected": 10,
+  "production_profile_unchanged": true,
+  "production_profile_rejects_candidate": true,
+  "candidate_remains_pending": true,
+  "real_receipt_kind": "historical_linkfix_receipt",
+  "modern_receipt_evidence": "synthetic fixtures only; no real successful generic-recipe receipt available",
+  "scope": "existing real asset binding; no proof of fresh build, link provenance or runtime correctness",
+  "new_compilations": 0,
+  "new_native_executions": 0,
+  "new_device_commands": 0,
+  "new_model_requests": 0,
+  "large_assets_copied": false,
+  "runtime_profile_exported": false,
+  "public_scope": "derived only; raw candidate paths and manifests are not distributed"
+}

@@ -104,6 +104,8 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 
 已有受验构建记录和产物换目录后，可以给`export-source`显式提供`--records-root`和`--artifact-map`，保留原记录字节与固定身份检查。该路径已完成本机独立客户端的真实输入解析核对；不会把刚编出的新构建自动加入已验profile，也不代表新电脑全流程已验。格式和边界见[构建身份与文件位置](Android构建身份与文件位置-20261016.md)。
 
+若拿到的是新构建而非已验运行包，先使用[待验候选交接工具](Android新构建的待验候选-20261016.md)固定记录与实际文件。`candidate.json`只用于后续验收交接，不能填入`--plan-profile`；该工具本身不运行手机，也不把候选登记为已验。
+
 ## 启动前快速定位问题
 
 使用现有运行包先做本地检查；加`--device`才检查手机身份与必要文件，不会加载模型：
