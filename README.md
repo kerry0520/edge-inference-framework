@@ -104,4 +104,6 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 
 ## 统一场景、证据范围与演示
 
-新增离线计划及显式运行的生命周期验收驱动，覆盖预算拒绝后继续、new与短长路径切换；**新驱动离线测试通过，当前实机待验证**。已有真实旧程序拒绝记录复核通过，不当作新source程序实测。见[请求状态](docs/Android请求拒绝与状态提交-20261016.md)、[演示主线](docs/项目演示与主线讲解-20261016.md)、[九场景范围](docs/Android正式验收范围与证据索引-20261016.md)和[阶段边界](evidence/acceptance-integration-20261016/README.md)。
+新增离线计划及显式运行的生命周期验收驱动，覆盖预算拒绝后继续、new与短长路径切换；**新源码运行包已完成固定手机的五成功、一预算拒绝及new/短长切换，独立原件复核通过**。已有真实旧程序拒绝记录复核通过，不当作新source程序实测。见[请求状态](docs/Android请求拒绝与状态提交-20261016.md)、[演示主线](docs/项目演示与主线讲解-20261016.md)、[九场景范围](docs/Android正式验收范围与证据索引-20261016.md)和[阶段边界](evidence/acceptance-integration-20261016/README.md)。
+
+本轮生命周期实际驱动/native/launcher退出0，53forward，详见[新运行包实机场景](evidence/acceptance-integration-20261016/README.md)。没有新增完整分数、速度或RSS结论。
