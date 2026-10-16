@@ -101,3 +101,7 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ## 启动前检查与已有会话验收
 
 默认离线检查运行包和客户端；显式--device才检查固定手机及必要模型文件。另提供已有full-plan会话的离线一致性复核，准备成功与实际请求成功分别报告。见[使用与原理](docs/Android启动前检查与推理验收-20261016.md)、[阶段范围](evidence/runtime-readiness-20261016/README.md)及[项目总览](docs/项目当前成果与下一步.md)。
+
+## 统一场景、证据范围与演示
+
+新增离线计划及显式运行的生命周期验收驱动，覆盖预算拒绝后继续、new与短长路径切换；**新驱动离线测试通过，当前实机待验证**。已有真实旧程序拒绝记录复核通过，不当作新source程序实测。见[请求状态](docs/Android请求拒绝与状态提交-20261016.md)、[演示主线](docs/项目演示与主线讲解-20261016.md)、[九场景范围](docs/Android正式验收范围与证据索引-20261016.md)和[阶段边界](evidence/acceptance-integration-20261016/README.md)。

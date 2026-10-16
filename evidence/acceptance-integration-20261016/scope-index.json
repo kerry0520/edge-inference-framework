@@ -1,0 +1,180 @@
+{
+  "scope": "derived index of historical evidence; no new model or f32 recomputation",
+  "new_driver_live_acceptance_pending": true,
+  "scenes": [
+    {
+      "id": "kv32",
+      "title": "同chunk32原Attention前缀复用",
+      "nonzero_counts": {
+        "actual_processes": 4,
+        "requests": 10,
+        "complete_vocab_pairs": 17
+      },
+      "comparison": "full_151936_f32_byte_equal",
+      "limits": "旧原Attention KV复用；非计划缓存、非chunk0对照、非速度",
+      "program": {
+        "deployment_sha256": "86347499ab6276942350a0ca8a241215f6046f98342902017e6aafe03063e234",
+        "library_sha256": "5c2d58ee4b2774ec59d0537fad550ffe3109244110fef4b6b6c1017877ca01cf",
+        "worker_sha256": "62f0c1e46db878d653d6f7dbcbd3448ab4b5667d14be7649f3831d08e176cc8c",
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "boundary",
+      "title": "非末块执行边界",
+      "nonzero_counts": {
+        "forwards": 40,
+        "complete_vocab_pairs": 14,
+        "attention_boundaries": 2240
+      },
+      "comparison": "full_151936_f32_byte_equal",
+      "limits": "隔离固定ID probe，非正式response/聊天/性能",
+      "program": {
+        "binary_sha256": "66248b66465f4ad0382577fb1663dba707a1a0ff5aa524847129775b3df00d1f",
+        "candidate_library_sha256": "1e62540ab1c624d679d355dd3415730e01cb93f43edbcc8f352c71ca82a16f43",
+        "source_sha256": "5739f96ac984e708a2781aa89349c35119065c768a3d7210133f9b57b36bfd8b",
+        "helper_sha256": "0033f9d20fec57b702809951035f503f32af138f0c9f152258531477676862fc",
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "response",
+      "title": "输出需求接入response",
+      "nonzero_counts": {
+        "requests": 14,
+        "complete_vocab_pairs": 59,
+        "baseline_head": 64,
+        "candidate_head": 59
+      },
+      "comparison": "full_151936_f32_byte_equal",
+      "limits": "每请求临时trunk，非持久计划；诊断版，非性能",
+      "program": {
+        "binary_sha256": "ec531b96f4c742b8500b53ced443c216430058d889a34e8a315f6cf758506a03",
+        "candidate_library_sha256": "b3e11daff6f2dee3f3b2c1958599fbf28c789d13fd13910a913e89f2fb8c666a",
+        "worker_sha256": "ab640567f2a52e4653e0e5b234a5c82f9406dae4ac4cd930c48001bd9f6972c3",
+        "helper_sha256": "a5698788461a0f7189f824fefaabdbae1137aa36c6d21340d2708a1d336f0483",
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "temporary_cost",
+      "title": "每请求临时计划成本",
+      "nonzero_counts": {
+        "requests": 62,
+        "performance_requests": 54,
+        "performance_measured": 48,
+        "forwards": 1014
+      },
+      "comparison": "same_generated_ids_and_status_no_new_full_logits",
+      "limits": "ABBA逐组统计；尚无持久计划，512收益不能沿用到当前新程序",
+      "program": {
+        "binary_sha256": "cf05f7ec2742e7f384c573ba82d9ff9d97ed39ab5258390e91a35248e8127b08",
+        "candidate_library_sha256": "12f5be4c4acfbc6abfc90f9f16df26d13bff17e46b58f2e1eb7db307edf0a888",
+        "worker_sha256": "1dd9a7c7b42e12f0dc00ddaca3268e4377cfb8b5571779aa3fcddea445bfe658",
+        "helper_sha256": "2c4950acf8aa1bd70f1ed2cd3393bb9fcbb755a580aeedb9aaf7476f2be4432d",
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "lifecycle",
+      "title": "计划缓存状态与生命周期",
+      "nonzero_counts": {
+        "requests": 24,
+        "forwards": 99,
+        "complete_vocab_pairs": 51
+      },
+      "comparison": "full_151936_f32_byte_equal",
+      "limits": "主receipt为G1-G3的21请求45对；合并G4才24请求51对。failed load前cache已被配置失效清空；非带cache失败load覆盖",
+      "program": {
+        "binary_sha256": "45d8d720d0aa13521173c3a932cdf775a049b921b2610cc47c08f1e7e90759dd",
+        "candidate_library_sha256": "bc7089434d8cd02bb099e8bcd9373e2441f60a5534aef116dc6b22b83f51f594",
+        "worker_sha256": "4416471d338a02d7fe8ad4dbac2863b9aedba83111d0d4e591db716512567b3c",
+        "helper_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+        "diagnostic": true,
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "cache_performance",
+      "title": "省输出层与常驻计划组合性能",
+      "nonzero_counts": {
+        "performance_requests": 52,
+        "warm_measured": 48,
+        "performance_forwards": 776
+      },
+      "comparison": "same_generated_ids_and_status_no_new_full_logits",
+      "limits": "四进程B,C,C,B的进程均值；组合贡献非缓存独立贡献；不直接归因ee5或2cc聊天程序",
+      "program": {
+        "binary_sha256": "559354f6a88e43d211da5cf093ebdd70196626f3a4f4f452b2d86666033b427e",
+        "candidate_library_sha256": "7d6147a6c41af78572ba4704c83a4c719aba01cc43c5661721e252c9213291fa",
+        "worker_sha256": "4416471d338a02d7fe8ad4dbac2863b9aedba83111d0d4e591db716512567b3c",
+        "helper_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+        "diagnostic": false,
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "cache_memory",
+      "title": "常驻计划额外资源",
+      "nonzero_counts": {
+        "requests": 4,
+        "forwards": 96,
+        "rss_samples": [
+          211,
+          228,
+          200,
+          213
+        ]
+      },
+      "comparison": "whole_process_sampled_rss",
+      "limits": "与计时独立；10ms采样峰值非精确tensor大小；HWM加载峰值，非省内存",
+      "program": {
+        "binary_sha256": "559354f6a88e43d211da5cf093ebdd70196626f3a4f4f452b2d86666033b427e",
+        "candidate_library_sha256": "7d6147a6c41af78572ba4704c83a4c719aba01cc43c5661721e252c9213291fa",
+        "worker_sha256": "4416471d338a02d7fe8ad4dbac2863b9aedba83111d0d4e591db716512567b3c",
+        "helper_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+        "diagnostic": false,
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "source_generation",
+      "title": "新源码程序对既有计划聊天回归",
+      "nonzero_counts": {
+        "requests": 6,
+        "matched_request_pairs": 3,
+        "forwards": 62
+      },
+      "comparison": "same_input_ids_output_ids_text_status_plan_counters",
+      "limits": "ee5对2cc各一进程3请求；只生成轨迹与生命周期，不是完整logits/新性能",
+      "program": {
+        "binary_sha256": "2cc76982280e6607fdbef1e37c9de0511a9f898efd43133de6268380093dd959",
+        "library_sha256": "5b9d239bdf841558614f29bb2657ebc378b75cd7dda08835fddeaf852022f257",
+        "source_sha256": "bbec551047e4d58690e03d4d48b525371e7a6a06dc6d49cd314fa88c80788b1a",
+        "helper_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+        "diagnostic": false,
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    },
+    {
+      "id": "bundle_cli",
+      "title": "独立运行包正式CLI",
+      "nonzero_counts": {
+        "requests": 3,
+        "matched_prior_requests": 3,
+        "forwards": 31,
+        "recovered_files": 41
+      },
+      "comparison": "same_input_ids_output_ids_text_status_plan_counters",
+      "limits": "CLI/native/launcher0；collector后复制失败1，41文件离线恢复，无重放；host Python审计不是子进程沙箱",
+      "program": {
+        "binary_sha256": "2cc76982280e6607fdbef1e37c9de0511a9f898efd43133de6268380093dd959",
+        "library_sha256": "5b9d239bdf841558614f29bb2657ebc378b75cd7dda08835fddeaf852022f257",
+        "source_sha256": "bbec551047e4d58690e03d4d48b525371e7a6a06dc6d49cd314fa88c80788b1a",
+        "helper_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+        "diagnostic": false,
+        "mnn_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
+      }
+    }
+  ]
+}

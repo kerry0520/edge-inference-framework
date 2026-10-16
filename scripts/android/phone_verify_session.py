@@ -37,12 +37,68 @@ def load(path):
     return json.loads(raw.decode('utf-8-sig')), digest(raw)
 
 
-def verify(session, stdout, cli):
+def check_messages(messages):
+    require(type(messages) is list and 0 < len(messages) <= 31 and len(messages) % 2 == 1, 'message count')
+    require(all(type(m) is dict and m.get('role') == ('user' if i % 2 == 0 else 'assistant') and
+                type(m.get('content')) is str and bool(m['content'].strip()) and '\x00' not in m['content']
+                for i, m in enumerate(messages)), 'message roles/content')
+    sizes = [len(m['content'].encode('utf-8')) for m in messages]
+    require(max(sizes) <= 65536 and sum(sizes) <= 262144, 'worker message limits')
+
+
+def check_budget_rejections(session, ready):
+    """Reconstruct all transitions; rejected input never becomes conversation history."""
+    events, seen = [], set()
+    for trace in session['requests']:
+        events.append((trace['submitted_at_unix'], 'success', trace))
+    for trace in session.get('rejected_requests', []):
+        events.append((trace['submitted_at_unix'], 'rejected', trace))
+    for reset in session.get('conversation_resets', []):
+        events.append((reset['at_unix'], 'new', reset))
+    require(all(timestamp(e[0]) for e in events), 'transition timestamps')
+    history, completed = [], -1
+    for at, kind, trace in sorted(events, key=lambda e: e[0]):
+        require(at > completed, 'overlapping request/reset/rejection')
+        if kind == 'new':
+            history, completed = [], at
+            continue
+        q, r = trace['request'], trace['response']
+        check_messages(q['messages'])
+        rid = q['id']
+        require(type(rid) is str and rid and len(rid.encode('utf-8')) <= 128 and '\x00' not in rid and rid not in seen, 'request id')
+        seen.add(rid)
+        require(q['session_token'] == session['session_id'] and q['messages'][:-1] == history, 'rejection/history transition')
+        if kind == 'success':
+            history = q['messages'] + [{'role': 'assistant', 'content': r['text']}]
+            completed = at + trace['elapsed_seconds']
+            continue
+        require(trace.get('state') == 'rejected' and r.get('event') == 'rejected' and
+                r.get('reason') == 'context_budget_exceeded' and r.get('id') == rid, 'budget rejection kind')
+        require(type(r.get('pid')) is int and r['pid'] == ready['pid'] and
+                type(r.get('load_count')) is int and r['load_count'] == 1, 'rejection identity')
+        for key in ('max_new_tokens', 'max_context_tokens'):
+            require(integer(q.get(key), 1) and q[key] <= 512 and
+                    type(r.get(key)) is int and r[key] == q[key], 'rejection ' + key)
+        require(integer(r.get('input_tokens'), 1) and
+                r['input_tokens'] + q['max_new_tokens'] > q['max_context_tokens'], 'rejection must exceed token budget')
+        frames = trace['frames']
+        require(type(frames) is list and len(frames) == 1 and frames[0]['message'] == r, 'rejection must contain only one frame')
+        elapsed, sent = frames[0]['elapsed_seconds'], trace['sent_at_unix']
+        require(timestamp(elapsed) and timestamp(sent) and at <= sent <= at + elapsed, 'rejection timing')
+        require(not trace.get('partial_bytes_hex') and not trace.get('chunk_count'), 'rejection has streamed text')
+        completed = at + elapsed
+    require(session['conversation'] == history, 'final history after rejection/reset')
+
+
+def verify(session, stdout, cli, allow_budget_rejections=False):
     require(type(cli) is dict and type(cli.get('actual_exit')) is int and cli['actual_exit'] == 0, 'CLI exit must be integer zero')
     require(type(session) is dict and session.get('status') == 'closed', 'session must be closed')
     for key in ('worker_exit', 'adb_launcher_exit'):
         require(type(session.get(key)) is int and session[key] == 0, key)
-    require('pending_request' not in session and not session.get('rejected_requests'), 'unconfirmed/rejected requests unsupported')
+    require('pending_request' not in session, 'unconfirmed requests unsupported')
+    rejected = session.get('rejected_requests', [])
+    require(type(rejected) is list and (allow_budget_rejections is True or not rejected),
+            'budget rejections require explicit opt-in')
     require(session.get('history_mode') == 'full_recompute', 'full recompute required')
     ready = session['ready']
     require(integer(ready.get('pid'), 1) and type(ready.get('load_count')) is int and ready['load_count'] == 1, 'ready identity')
@@ -107,12 +163,10 @@ def verify(session, stdout, cli):
         require(type(tokens) is list and tokens and all(integer(x) for x in tokens), 'output tokens')
         require(type(ids) is list and ids and all(integer(x) for x in ids), 'input ids')
         require(integer(r.get('input_tokens'), 1) and r['input_tokens'] == len(ids) and type(r.get('prompt_tokens')) is int and r['prompt_tokens'] == len(ids), 'input counts')
-        require(type(q.get('messages')) is list and len(q['messages']) > 0, 'messages')
+        check_messages(q.get('messages'))
         messages = q['messages']
-        require(all(type(message) is dict and message.get('role') == ('user' if i % 2 == 0 else 'assistant') and type(message.get('content')) is str and bool(message['content'].strip()) and '\x00' not in message['content'] for i, message in enumerate(messages)), 'message roles/content')
         require(messages[:-1] == previous_history, 'conversation history/reset mismatch')
         n = len(messages)
-        require(n <= 31 and all(len(m['content'].encode('utf-8')) <= 65536 for m in messages) and sum(len(m['content'].encode('utf-8')) for m in messages) <= 262144, 'worker message limits')
         require(n % 2 == 1 and all(type(r.get(k)) is int and r[k] == v for k, v in {'message_count': n, 'committed_message_count': n + 1, 'committed_turn_count': (n + 1) // 2}.items()), 'message counts')
         require(r.get('history_mode') == 'full_recompute', 'response history mode')
         require(integer(q.get('max_new_tokens'), 1) and q['max_new_tokens'] <= 512 and integer(q.get('max_context_tokens'), 1) and q['max_context_tokens'] <= 512 and len(ids) + q['max_new_tokens'] <= q['max_context_tokens'], 'token budget')
@@ -158,6 +212,8 @@ def verify(session, stdout, cli):
     if reset_index < len(reset_times):
         previous_history = []
     require(session.get('conversation') == previous_history, 'final conversation mismatch')
+    if allow_budget_rejections:
+        check_budget_rejections(session, ready)
     require(totals['full'] + totals['trunk'] > 0, 'zero forwards')
     events = [json.loads(line) for line in stdout.splitlines() if line.startswith('{')]
     for name in ('ready', 'stopped', 'plan_cache_closed'):
@@ -168,16 +224,17 @@ def verify(session, stdout, cli):
     closed = next(e for e in events if e.get('event') == 'plan_cache_closed')
     require(type(closed.get('registry_owner_count')) is int and closed['registry_owner_count'] == 0, 'registry owners')
     return {'accepted': True, 'successful_requests': len(requests), 'actual_cli_exit': 0, 'native_exit': 0, 'launcher_exit': 0,
-            'actual_forwards': totals['full'] + totals['trunk'], **totals}
+            'actual_forwards': totals['full'] + totals['trunk'],
+            'confirmed_budget_rejections': len(rejected), **totals}
 
 
-def review(session_path, stdout_path, cli_path):
+def review(session_path, stdout_path, cli_path, allow_budget_rejections=False):
     hashes = {}
     try:
         session, hashes['session'] = load(session_path)
         raw = Path(stdout_path).read_bytes(); hashes['worker_stdout'] = digest(raw)
         cli, hashes['cli_command'] = load(cli_path)
-        result = verify(session, raw.decode('utf-8'), cli)
+        result = verify(session, raw.decode('utf-8'), cli, allow_budget_rejections)
     except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as error:
         result = {'accepted': False, 'error_type': type(error).__name__, 'validation_errors': [str(error)]}
     return {**result, 'scope': SCOPE, 'input_sha256': hashes, 'device_calls': 0, 'model_requests': 0}
@@ -187,8 +244,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('session', 'worker-stdout', 'cli-command', 'output'):
         parser.add_argument('--' + name, required=True)
+    parser.add_argument('--allow-budget-rejections', action='store_true',
+                        help='also verify native context-budget rejection frames and unchanged conversation history')
     args = parser.parse_args(argv)
-    result = review(args.session, args.worker_stdout, args.cli_command)
+    result = review(args.session, args.worker_stdout, args.cli_command, args.allow_budget_rejections)
     with Path(args.output).open('x', encoding='utf-8') as output:
         output.write(json.dumps(result, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(result, ensure_ascii=False))

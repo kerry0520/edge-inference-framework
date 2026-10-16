@@ -111,3 +111,11 @@ python scripts/android/phone_runtime_check.py --plan-profile "build/source-runti
 ```
 
 每次输出使用新的文件名，避免覆盖记录。检查通过后，再按上面的聊天命令启动。准备检查通过不等于模型已经回答；层次与已有会话的复核方法见[启动前检查与推理验收](Android启动前检查与推理验收-20261016.md)。
+
+## 统一验收场景（新增，实机待确认）
+
+```powershell
+python scripts/android/phone_acceptance.py --plan-profile "build/source-runtime-bundle-20261016/手机运行包 空格/profile.json" --output results/local-acceptance-plan
+```
+
+默认仅保存离线计划。加`--run`并改用新输出目录，才会在手机执行长输入、续轮、预算拒绝后继续、new和短/长路径切换；目前新驱动已通过离线测试，尚待本轮手机验证。详见[请求拒绝与状态提交](Android请求拒绝与状态提交-20261016.md)。演示讲解见[项目演示与主线](项目演示与主线讲解-20261016.md)，数值与性能范围见[证据索引](Android正式验收范围与证据索引-20261016.md)。

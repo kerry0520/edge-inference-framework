@@ -1,0 +1,19 @@
+{
+  "offline_stage_complete": true,
+  "live_acceptance_pending": true,
+  "related_tests": 25,
+  "new_tests": 16,
+  "existing_regression_tests": 9,
+  "runner_tests": 11,
+  "verifier_tests": 14,
+  "independent_budget_probes": 17,
+  "old_actual_successes_reviewed": 6,
+  "old_actual_budget_rejections_reviewed": 1,
+  "old_actual_forwards_reviewed": 61,
+  "new_model_requests": 0,
+  "new_native_processes": 0,
+  "new_compilations": 0,
+  "production_bundle_copies": 0,
+  "index_scenes": 9,
+  "index_hash_references_checked": 90
+}
