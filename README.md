@@ -113,3 +113,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 已验源构建输入可通过显式记录根与资产映射搬移，固定身份门槛保留；同机隔离解析通过，不代表新电脑构建或新程序已验。见[用法与职责](docs/Android构建身份与文件位置-20261016.md)及[限定简结](evidence/accepted-input-relocation-20261016/README.md)。
 
 新增[待验候选交接](docs/Android新构建的待验候选-20261016.md)：仅绑定文件，不认证编译或运行，不可当正式profile。见[范围与派生简结](evidence/source-candidate-handoff-20261016/README.md)。
+
+新增[候选怎样进入手机验证](docs/Android待验候选怎样进入手机-20261016.md)，见[有限验证范围](evidence/candidate-device-validation-20261016/README.md)。

@@ -123,3 +123,13 @@ python scripts/android/phone_acceptance.py --plan-profile "build/source-runtime-
 ```
 
 默认仅保存离线计划。加`--run`并改用新输出目录，才会在手机执行长输入、续轮、预算拒绝后继续、new和短/长路径切换；新源码运行包已完成这整组实机场景及独立原件复核。该驱动每次生成8token，用于生命周期验收；日常聊天按上面的64token命令。详见[请求拒绝与状态提交](Android请求拒绝与状态提交-20261016.md)。演示讲解见[项目演示与主线](项目演示与主线讲解-20261016.md)，数值与性能范围见[证据索引](Android正式验收范围与证据索引-20261016.md)。
+
+## 开发者可选：待验候选的受控设备验证
+
+`phone_candidate_validation.py`与正式聊天入口分开。必须提供候选文件和独立参考文件，以及两者从可信记录取得的外部SHA；默认只检查输入，加`--run`才运行固定三题。不要把候选传给`--plan-profile`。
+
+```powershell
+python scripts/android/phone_candidate_validation.py --candidate candidate.json --expected-candidate-sha256 <候选SHA256> --reference reference.json --expected-reference-sha256 <参考SHA256> --output results/local-candidate-check
+```
+
+尖括号是待替换内容，不可原样执行；输出目录须尚不存在。工具不会生成可信参考或自动提升候选。当前真实正例使用既有已验证程序，不是任意新编程序的验收证明。概念与边界见[候选设备验证](Android待验候选怎样进入手机-20261016.md)。日常提问继续使用上面的正式聊天入口。

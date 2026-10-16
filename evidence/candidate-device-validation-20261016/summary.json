@@ -1,0 +1,16 @@
+{
+  "accepted": true,
+  "native_sessions": 1,
+  "requests": 3,
+  "new": 2,
+  "chunks": 12,
+  "full": 15,
+  "trunk": 6,
+  "decode_included_in_full": 12,
+  "actual_forwards": 21,
+  "native_exit": 0,
+  "runner_exit": 0,
+  "production_admitted": false,
+  "scope": "known existing binary, pending candidate adapter, three deterministic generations; no new build, logits, stable performance, or other devices",
+  "public_scope": "derived counts only; no candidate/reference/receipts/raw device logs or large assets"
+}
