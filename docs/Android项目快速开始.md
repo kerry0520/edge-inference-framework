@@ -59,7 +59,7 @@ python scripts/android/phone_chat.py --stats --mode kv --prompt "2+10等于几�
 
 ## 学习只看三个入口
 
-1. [连续复习](端侧推理框架连续复习.md)：正文讲希望你理解的职责与原理，从真实手机请求接到MNN执行链。
+1. [连续复习](项目演示与主线讲解-20261016.md)：正文讲希望你理解的职责与原理，从真实手机请求接到MNN执行链。
 2. [学习台账](推理框架学习台账.md)：区分工程已完成、已经讲过和理解待反馈。
 3. [交付与复现指南](端侧推理框架交付与复现指南.md)：定位模型请求如何经过LLM、Module、Session/Pipeline和Execution；需要查工程证据时再沿链接深入。
 
@@ -101,6 +101,8 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ```
 
 固定手机三轮正式CLI验证通过，旧包仍受支持。新包不随公开仓库分发，export-source当前只支持本项目明确纳入的一组已验构建及对应证据。详见[源码构建运行包](Android源码构建运行包-20261016.md)。
+
+已有受验构建记录和产物换目录后，可以给`export-source`显式提供`--records-root`和`--artifact-map`，保留原记录字节与固定身份检查。该路径已完成本机独立客户端的真实输入解析核对；不会把刚编出的新构建自动加入已验profile，也不代表新电脑全流程已验。格式和边界见[构建身份与文件位置](Android构建身份与文件位置-20261016.md)。
 
 ## 启动前快速定位问题
 

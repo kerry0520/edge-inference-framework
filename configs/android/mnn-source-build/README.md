@@ -4,6 +4,7 @@
 
 ## 明确输入
 
+- Windows x86_64宿主、Python 3.11（脚本使用标准库），以及在PATH中可执行的Git。Git用于读取固定提交、归档源码和应用补丁，不改输入仓库的工作树。
 - 一个包含上述提交的本地MNN Git仓库，脚本直接`git archive`该提交，不把工作树中的未提交修改带入。
 - Windows x86_64 Android NDK r30，revision `30.0.16248370`。
 - CMake、Ninja程序路径。本轮工具为CMake4.1.1-msvc1、Ninja1.12.1；prepare记录实际输入工具SHA，build前重核，不把所有其他工具版本视为已验。
@@ -11,6 +12,8 @@
 - 当前仓库的worker/helper、这里的三份补丁和lock.json。编译期为`PREFILL_REUSE_DIAGNOSTIC=0`。
 
 三补丁按framework→guard→trunk应用；最后五个改变的框架源码恢复并验证到已验字节。上游代码及这些修改遵循MNN的Apache-2.0许可，补丁保留原代码中的许可信息。
+
+NDK应是完整安装，包含sysroot、编译器资源、链接器、ar/ranlib和Android工具链文件；只有一个编译器入口文件并不代表构建依赖齐全。源码、NDK与KleidiAI由调用者预先准备，本脚本不联网取得它们。工具存在、prepare成功、build成功、运行包已验和手机已运行是不同状态。
 
 ## 两步运行
 
@@ -36,6 +39,8 @@ build重核源树、依赖与工具，执行CMake configure并校验关键选项
 MNN Git归档里的六个symlink（一个文档、五个Android商店媒体）在Windows提取为linkblob普通文本，不创建操作系统链接；这些不参与本CPU目标。不能据此宣称Android应用打包或文档构建已保持原生symlink语义。外部依赖tar仍拒绝符号/硬链接及越界路径。
 
 编译成功表示构建链闭合；固定请求的生成回归表示该场景行为一致。它们不等于全模型完整logits一致、其他手机已适配，或新增性能提升。构建产物和模型不随公开源码仓库分发。
+
+已有已验源构建的记录和产物可以通过显式位置映射搬移，见[文件位置与构建身份](../../../docs/Android构建身份与文件位置-20261016.md)。这不让新生成的`runtime_validation: pending`构建自动进入既有已验profile；新程序仍需自己的审查和设备验证。既有受验build记录本身可能保留当时的pending字段，受验状态由另外固定的构建/手机审查记录共同确定，不能只按单个字段判定。
 
 ## 保留失败结果后再做完整构建
 

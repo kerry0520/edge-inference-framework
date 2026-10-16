@@ -182,7 +182,42 @@ def export_bundle(output, root=None):
     return result
 
 
-def resolve_source_build(source_build, root=None):
+def _plain_path(value):
+    """Reject links/reparse points in every component before resolving a local input."""
+    path = Path(value).expanduser().absolute()
+    for component in (path, *path.parents):
+        if component.is_symlink() or getattr(component.lstat(), "st_file_attributes", 0) & 0x400:
+            raise ValueError("source-build输入不能经过链接: " + str(component))
+    return path.resolve(strict=True)
+
+
+def _source_artifacts(artifact_map):
+    """A separate map relocates accepted bytes; it cannot alter their identities.
+
+    Relative paths stay beneath the map directory. Absolute paths are explicit
+    external inputs. Neither form may traverse symlinks or Windows junctions.
+    """
+    map_path = _plain_path(artifact_map)
+    document = _read(map_path)
+    keys = {"binary", "library", "source_inputs_directory"}
+    if not isinstance(document, dict) or set(document) != keys:
+        raise ValueError("artifact-map必须仅包含binary/library/source_inputs_directory")
+    inputs = {}
+    for role, value in document.items():
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("artifact-map路径必须是非空字符串: " + role)
+        path = Path(value)
+        if not path.is_absolute():
+            if path.anchor or ".." in path.parts:
+                raise ValueError("artifact-map相对路径不能越界: " + role)
+            path = map_path.parent / path
+        inputs[role] = _plain_path(path)
+    if not inputs["source_inputs_directory"].is_dir():
+        raise ValueError("artifact-map的source_inputs_directory必须是目录")
+    return inputs, sha(map_path)
+
+
+def resolve_source_build(source_build, root=None, *, records_root=None, artifact_map=None):
     """Export-time gate for one reviewed source build, never a runtime dependency.
 
     Evidence hashes are pinned in this client, rather than trusted from the
@@ -190,15 +225,27 @@ def resolve_source_build(source_build, root=None):
     No compilation, deployment, or model request is performed here.
     """
     root = Path(ROOT if root is None else root).resolve()
-    stage = root / SOURCE_STAGE
-    supplied = Path(source_build).expanduser().absolute()
-    if supplied.is_symlink() or supplied.resolve(strict=True) != (stage / SOURCE_MANIFEST).resolve(strict=True):
+    relocated = records_root is not None or artifact_map is not None
+    # Preserve the accepted historical manifest's intermediate build junctions.
+    # New explicit relocation opts into the stricter no-link component policy.
+    def input_path(value):
+        if relocated:
+            return _plain_path(value)
+        path = Path(value).expanduser().absolute()
+        if path.is_symlink():
+            raise ValueError("source-build输入不能是符号链接: " + str(path))
+        return path.resolve(strict=True)
+    stage = input_path(root / SOURCE_STAGE if records_root is None else records_root)
+    if not stage.is_dir():
+        raise ValueError("source-build证据根必须是目录")
+    supplied = input_path(source_build)
+    if supplied != input_path(stage / SOURCE_MANIFEST):
         raise ValueError("不是受验的source-build最终manifest")
     documents = {}
     hashes = {}
     for relative, expected in SOURCE_EVIDENCE.items():
-        path = stage / relative
-        if path.is_symlink() or not path.resolve(strict=True).is_relative_to(stage.resolve(strict=True)):
+        path = input_path(stage / relative)
+        if not path.is_relative_to(stage):
             raise ValueError("source-build证据越界: " + relative)
         hashes[relative] = sha(path)
         if hashes[relative] != expected:
@@ -233,33 +280,38 @@ def resolve_source_build(source_build, root=None):
                           ("diagnostic", False), ("source_path", "apps/android/phone_chat_plan_worker.cpp"),
                           ("helper_path", "apps/android/prefill_trunk_reuse.hpp")):
         _equal(manifest.get(key), expected, "source manifest " + key)
-    inputs = {"binary": Path(manifest["binary_path"]),
-              "library": Path(manifest["library_path"]),
+    mapped, map_sha = _source_artifacts(artifact_map) if artifact_map is not None else ({}, None)
+    inputs = {"binary": mapped.get("binary", Path(manifest["binary_path"])),
+              "library": mapped.get("library", Path(manifest["library_path"])),
               "worker": root / "apps/android/phone_chat_plan_worker.cpp",
               "helper": root / "apps/android/prefill_trunk_reuse.hpp"}
-    frozen_sources = Path(manifest["source_inputs_directory"])
+    frozen_sources = mapped.get("source_inputs_directory", Path(manifest["source_inputs_directory"]))
     inputs["built_worker"] = frozen_sources / "phone_chat_plan_worker.cpp"
     inputs["built_helper"] = frozen_sources / "prefill_trunk_reuse.hpp"
     input_hashes = {}
     for role, path in inputs.items():
-        if path.is_symlink() or not path.is_file():
+        path = input_path(path)
+        if not path.is_file():
             raise ValueError("source-build输入不是普通文件: " + role)
         key = {"binary": "binary_sha256", "library": "library_sha256", "worker": "source_sha256",
                "helper": "helper_sha256", "built_worker": "source_sha256", "built_helper": "helper_sha256"}[role]
         input_hashes[role] = sha(path)
         if input_hashes[role] != SOURCE_IDENTITY[key]:
             raise ValueError("source-build实际输入身份不匹配: " + role)
-    return {"identity": dict(SOURCE_IDENTITY), "evidence_sha256": hashes,
+    result = {"identity": dict(SOURCE_IDENTITY), "evidence_sha256": hashes,
             "inputs": {role: str(path.resolve(strict=True)) for role, path in inputs.items()},
             "input_sha256": input_hashes}
+    if artifact_map is not None:
+        result["artifact_map_sha256"] = map_sha
+    return result
 
 
-def export_source_bundle(output, source_build, root=None):
+def export_source_bundle(output, source_build, root=None, *, records_root=None, artifact_map=None):
     """Export the accepted fresh-source ELF once, without copying its static library."""
     output = Path(output).expanduser().absolute()
     if output.exists() or output.is_symlink():
         raise FileExistsError("导出目录已存在，保留原件: " + str(output))
-    before = resolve_source_build(source_build, root)
+    before = resolve_source_build(source_build, root, records_root=records_root, artifact_map=artifact_map)
     output.mkdir(parents=True, exist_ok=False)
     for role in ("binary", "worker", "helper"):
         with (output / FILES[role]).open("xb") as target:
@@ -267,7 +319,7 @@ def export_source_bundle(output, source_build, root=None):
     save(output / FILES["runtime_build"], runtime_document(SOURCE_PROFILE_ID))
     save(output / FILES["provenance"], provenance_document(SOURCE_PROFILE_ID))
     save(output / "profile.json", profile_document(SOURCE_PROFILE_ID))
-    if before != resolve_source_build(source_build, root):
+    if before != resolve_source_build(source_build, root, records_root=records_root, artifact_map=artifact_map):
         raise ValueError("导出期间source-build输入变化；保留目录，不得运行")
     result = resolve_profile(output / "profile.json")
     save(output / "export-receipt.json", {"profile_id": SOURCE_PROFILE_ID,
@@ -286,6 +338,8 @@ def main(argv=None):
     source = commands.add_parser("export-source", help="从固定已验完整源码构建导出；不编译、不部署、不包含权重")
     source.add_argument("--output", required=True)
     source.add_argument("--source-build", required=True, help="已验收link-fix-v1/build.json")
+    source.add_argument("--records-root", help="搬移后的固定三份原始验收证据根；不修改证据内容")
+    source.add_argument("--artifact-map", help="独立JSON路径映射；相对路径以此文件所在目录为根")
     resolve = commands.add_parser("resolve", help="只读验证运行包，不连接手机")
     resolve.add_argument("--profile", required=True)
     resolve.add_argument("--adb-path")
@@ -294,7 +348,8 @@ def main(argv=None):
         if args.command == "export":
             result = export_bundle(args.output)
         elif args.command == "export-source":
-            result = export_source_bundle(args.output, args.source_build)
+            result = export_source_bundle(args.output, args.source_build,
+                                          records_root=args.records_root, artifact_map=args.artifact_map)
         else:
             result = resolve_profile(args.profile)
         if args.command == "resolve":

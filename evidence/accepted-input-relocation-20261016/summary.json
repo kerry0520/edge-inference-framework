@@ -1,0 +1,35 @@
+{
+  "accepted": true,
+  "source_files": {
+    "scripts/android/phone_plan_profile.py": "fc575dbc45a153df0aa7753d2679c6b249a7d4aec24e2a97e2b56052069aa73f",
+    "tests/android/test_phone_source_bundle.py": "b21e9478ae319e29e6da904a51da26970fee7a1e72f7a6da704cb35b9b2d9d28"
+  },
+  "tests_matched": 45,
+  "tests_passed": 44,
+  "tests_skipped": 1,
+  "real_relocated_inputs": 6,
+  "actual_consumer_exit": 0,
+  "audited_file_opens": 15,
+  "old_path_open_attempts": 0,
+  "old_default_exact_result_equal": true,
+  "accepted_identity_registries_unchanged": true,
+  "unchanged_runtime_functions": [
+    "_identity",
+    "profile_document",
+    "runtime_document",
+    "provenance_document",
+    "resolve_profile",
+    "resolve_adb_path",
+    "export_bundle"
+  ],
+  "independent_fixture_negative_rejections": 6,
+  "real_existing_junction_rejected_in_explicit_mode": true,
+  "large_assets_content_unchanged": true,
+  "large_assets_shared_by_hardlinks_not_copied": true,
+  "scope": "same-host isolated consumer resolver with existing accepted real artifacts; not full new-host rebuild or actual relocated export",
+  "new_compilations": 0,
+  "new_device_commands": 0,
+  "new_model_requests": 0,
+  "real_bundle_exports": 0,
+  "public_scope": "derived same-host resolver result; not independent proof of real assets/new-host build/runtime acceptance"
+}

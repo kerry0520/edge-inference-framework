@@ -8,11 +8,13 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/android"))
 import phone_plan_profile as profile
@@ -262,6 +264,137 @@ class SourceBundleTests(unittest.TestCase):
         self.assertTrue((output / "profile.json").exists())
         self.assertFalse((output / "export-receipt.json").exists())
         with self.assertRaises(FileExistsError): profile.export_source_bundle(output, manifest, root=root)
+
+    def relocated_fixture(self):
+        root, manifest, paths = self.source_fixture()
+        moved = self.base / "搬移 证据"
+        manifest.parents[2].rename(moved)
+        assets = self.base / "搬移 资产"
+        assets.mkdir()
+        paths["binary"].rename(assets / "worker")
+        paths["library"].rename(assets / "libMNN.a")
+        paths["built_worker"].parent.rename(assets / "snapshot")
+        mapping = assets / "map.json"
+        self.write(mapping, {"binary": "worker", "library": "libMNN.a",
+                             "source_inputs_directory": "snapshot"})
+        return root, moved, moved / profile.SOURCE_MANIFEST, mapping
+
+    def test_explicit_relocation_preserves_evidence_and_never_reads_original_paths(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        before = {rel: (records / rel).read_bytes() for rel in profile.SOURCE_EVIDENCE}
+        actual_bytes, actual_text = Path.read_bytes, Path.read_text
+        def guard(path):
+            path = Path(path).absolute()
+            if any(path.is_relative_to(root / old) for old in (profile.SOURCE_STAGE, "products", "snapshot")):
+                raise AssertionError("old path read: " + str(path))
+        def read_bytes(path, *args, **kwargs):
+            guard(path); return actual_bytes(path, *args, **kwargs)
+        def read_text(path, *args, **kwargs):
+            guard(path); return actual_text(path, *args, **kwargs)
+        with patch.object(Path, "read_bytes", read_bytes), patch.object(Path, "read_text", read_text), \
+                patch.object(subprocess, "run", side_effect=AssertionError("no execution")), \
+                patch.object(subprocess, "Popen", side_effect=AssertionError("no execution")):
+            result = profile.export_source_bundle(self.base / "导出 小型测试包", manifest, root,
+                                                  records_root=records, artifact_map=mapping)
+            self.assertEqual(result["profile_id"], profile.SOURCE_PROFILE_ID)
+        self.assertEqual(before, {rel: (records / rel).read_bytes() for rel in profile.SOURCE_EVIDENCE})
+
+    def test_map_requires_exact_keys_and_nonempty_strings(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        valid = json.loads(mapping.read_text())
+        bad = [{}, {**valid, "trusted": True}, {**valid, "binary": ""},
+               {**valid, "library": 1}, {**valid, "source_inputs_directory": "worker"}]
+        for document in bad:
+            with self.subTest(document=document):
+                self.write(mapping, document)
+                with self.assertRaises(ValueError):
+                    profile.resolve_source_build(manifest, root, records_root=records, artifact_map=mapping)
+
+    def test_relative_map_escape_rejected_but_explicit_absolute_input_allowed(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        document = json.loads(mapping.read_text())
+        external = self.base / "external-worker"
+        external.write_bytes(self.payload["binary"])
+        self.write(mapping, {**document, "binary": "../external-worker"})
+        with self.assertRaises(ValueError):
+            profile.resolve_source_build(manifest, root, records_root=records, artifact_map=mapping)
+        self.write(mapping, {**document, "binary": str(external)})
+        result = profile.resolve_source_build(manifest, root, records_root=records, artifact_map=mapping)
+        self.assertEqual(result["inputs"]["binary"], str(external.resolve()))
+
+    def test_relocated_assets_and_evidence_still_require_pinned_bytes(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        for target in (mapping.parent / "worker", records / "root-phone-acceptance-v1.json"):
+            original = target.read_bytes()
+            target.write_bytes(b"wrong identity")
+            with self.assertRaises(ValueError):
+                profile.resolve_source_build(manifest, root, records_root=records, artifact_map=mapping)
+            target.write_bytes(original)
+
+    def test_pending_new_build_and_wrong_records_location_cannot_be_admitted(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        wrong = records / "same-build.json"
+        wrong.write_bytes(manifest.read_bytes())
+        with self.assertRaises(ValueError):
+            profile.resolve_source_build(wrong, root, records_root=records, artifact_map=mapping)
+        self.write(manifest, {"runtime_validation": "pending", "compilation_performed": True,
+                              "actual_exit": 0, "binary_sha256": self.identity["binary_sha256"]})
+        with self.assertRaises(ValueError):
+            profile.resolve_source_build(manifest, root, records_root=records, artifact_map=mapping)
+
+    def test_relocated_map_rechecked_during_export(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        save = profile.save
+        def mutate(path, data):
+            save(path, data)
+            if Path(path).name == "profile.json":
+                mapping.write_text(mapping.read_text() + " ", encoding="utf8")
+        output = self.base / "retained failed relocation"
+        with patch.object(profile, "save", mutate):
+            with self.assertRaises(ValueError):
+                profile.export_source_bundle(output, manifest, root, records_root=records, artifact_map=mapping)
+        self.assertTrue(output.exists())
+        self.assertFalse((output / "export-receipt.json").exists())
+
+    def test_link_component_is_rejected_before_reading_mapped_assets(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        actual = Path.is_symlink
+        def linked(path):
+            return Path(path) == mapping.parent or actual(path)
+        # Exercise the ancestor policy without requiring OS symlink privileges.
+        with patch.object(Path, "is_symlink", linked):
+            with self.assertRaisesRegex(ValueError, "链接"):
+                profile.resolve_source_build(manifest, root, records_root=records, artifact_map=mapping)
+
+    def test_export_cli_forwards_explicit_relocation_options(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        with patch.object(profile, "export_source_bundle", return_value={}) as export, \
+                patch("builtins.print"):
+            self.assertEqual(profile.main(["export-source", "--source-build", str(manifest),
+                "--output", "new-output", "--records-root", str(records), "--artifact-map", str(mapping)]), 0)
+        export.assert_called_once_with("new-output", str(manifest), records_root=str(records),
+                                       artifact_map=str(mapping))
+
+    def test_default_preserves_historical_intermediate_junction_compatibility(self):
+        root, manifest, _ = self.source_fixture()
+        original = Path.lstat
+        def reparse(path, *args, **kwargs):
+            if Path(path) == root / "products":
+                return SimpleNamespace(st_mode=stat.S_IFDIR, st_file_attributes=0x400)
+            return original(path, *args, **kwargs)
+        with patch.object(Path, "lstat", reparse):
+            self.assertEqual(profile.resolve_source_build(manifest, root)["identity"], self.identity)
+
+    def test_explicit_map_rejects_ancestor_reparse_using_lstat_not_following_stat(self):
+        root, records, manifest, mapping = self.relocated_fixture()
+        original = Path.lstat
+        def reparse(path, *args, **kwargs):
+            if Path(path) == mapping.parent:
+                return SimpleNamespace(st_mode=stat.S_IFDIR, st_file_attributes=0x400)
+            return original(path, *args, **kwargs)
+        with patch.object(Path, "lstat", reparse):
+            with self.assertRaisesRegex(ValueError, "链接"):
+                profile.resolve_source_build(manifest, root, records_root=records, artifact_map=mapping)
 
 
 if __name__ == "__main__":

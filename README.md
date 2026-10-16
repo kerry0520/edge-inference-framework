@@ -109,3 +109,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 本轮生命周期实际驱动/native/launcher退出0，53forward，详见[新运行包实机场景](evidence/acceptance-integration-20261016/README.md)。没有新增完整分数、速度或RSS结论。
 
 当前生产程序已补[同版本开关对照](docs/Android同版本执行计划对照-20261016.md)：24请求生成与路由回归通过，16暖样本仅作限定计时观测，短负控漂移，不承诺稳定提速。见[派生证据](evidence/source-plan-abba-20261016/README.md)。
+
+已验源构建输入可通过显式记录根与资产映射搬移，固定身份门槛保留；同机隔离解析通过，不代表新电脑构建或新程序已验。见[用法与职责](docs/Android构建身份与文件位置-20261016.md)及[限定简结](evidence/accepted-input-relocation-20261016/README.md)。
