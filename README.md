@@ -115,3 +115,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 新增[待验候选交接](docs/Android新构建的待验候选-20261016.md)：仅绑定文件，不认证编译或运行，不可当正式profile。见[范围与派生简结](evidence/source-candidate-handoff-20261016/README.md)。
 
 新增[候选怎样进入手机验证](docs/Android待验候选怎样进入手机-20261016.md)，见[有限验证范围](evidence/candidate-device-validation-20261016/README.md)。
+
+新增[新程序与源码的对应关系](docs/Android新程序如何证明来自源码-20261016.md)，见[新构建到手机的范围](evidence/fresh-candidate-20261016/README.md)。
