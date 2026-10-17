@@ -1,0 +1,14 @@
+{
+  "accepted": true,
+  "profile_id": "mi11-qwen3-06b-fresh-plan-v1",
+  "old_profile_contracts_unchanged": true,
+  "native_sessions": 1,
+  "requests": 3,
+  "new": 2,
+  "chunks": 12,
+  "actual_forwards": 21,
+  "client_history_reads_observed": 0,
+  "python_open_events": 266,
+  "scope": "fixed explicitly reviewed third runtime, independent local client with Python-level observation; no new computer, logits or performance claim",
+  "raw_or_assets_published": false
+}

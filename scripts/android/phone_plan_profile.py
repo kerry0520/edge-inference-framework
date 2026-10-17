@@ -33,6 +33,28 @@ SOURCE_EVIDENCE = {
 }
 SOURCE_STAGE = "results/android/clean-source-build-20261015"
 SOURCE_MANIFEST = "recipe-v1/link-fix-v1/build.json"
+FRESH_PROFILE_ID = "mi11-qwen3-06b-fresh-plan-v1"
+FRESH_STAGE = "results/android/fresh-candidate-acceptance-20261016"
+FRESH_MANIFEST = "build-v3/build.json"
+FRESH_EVIDENCE = {
+    FRESH_MANIFEST: "66350fb811181b0922c6ce736d0f1e334adc7cb265097e5c0692715e25d571ba",
+    "build-v3/prepared.json": "87c517e3ee4a7e531607c76d59fc15feaa7ff664d951b1e848303ea3d274289e",
+    "review-built-v3/build-review.json": "e066ff1d61ea10f1cdf83078403bbf1af862ce781735a91718ddde2607c3dd27",
+    "review-device-v2/raw-acceptance.json": "f2bfe163b377bd8c1e9e69e59ac711168269914bdedfd21daece34746e30c524",
+    "root-review-v1/acceptance.json": "dfa178f708aa35d3841b38dbaa9d271c9c97df3106e282fd6be1bfafd28f0ef5",
+}
+FRESH_IDENTITY = {
+    "source_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2",
+    "source_sha256": "bbec551047e4d58690e03d4d48b525371e7a6a06dc6d49cd314fa88c80788b1a",
+    "helper_sha256": "f53b15b844e6eb20d3c309ac2b7fa953016b311b8453aa06b3877b5e68d13e04",
+    "binary_sha256": "82b18102e3e07911f4febcbca6426a4b19db630421f93cf809c0b5daf4f85772",
+    "library_sha256": "4f72f29a2cc847834934522ab4ddb7aaaf11394a09089eb40a3fe1f2740e77c2",
+    "source_build_manifest_sha256": FRESH_EVIDENCE[FRESH_MANIFEST],
+    "build_review_sha256": FRESH_EVIDENCE["review-built-v3/build-review.json"],
+    "generation_review_sha256": FRESH_EVIDENCE["review-device-v2/raw-acceptance.json"],
+    "root_review_sha256": FRESH_EVIDENCE["root-review-v1/acceptance.json"],
+    "prepared_sha256": FRESH_EVIDENCE["build-v3/prepared.json"],
+}
 FILES = {"binary": "phone_chat_plan_worker", "worker": "phone_chat_plan_worker.cpp",
          "helper": "prefill_trunk_reuse.hpp", "runtime_build": "runtime-build.json",
          "provenance": "provenance.json"}
@@ -61,6 +83,8 @@ def _identity(profile_id=None):
         return PROFILE_ID, IDENTITY
     if profile_id == SOURCE_PROFILE_ID:
         return SOURCE_PROFILE_ID, SOURCE_IDENTITY
+    if profile_id == FRESH_PROFILE_ID:
+        return FRESH_PROFILE_ID, FRESH_IDENTITY
     raise ValueError("未知运行包profile_id")
 
 
@@ -79,6 +103,13 @@ def runtime_document(profile_id=None):
 
 def provenance_document(profile_id=None):
     selected, identity = _identity(profile_id)
+    if selected == FRESH_PROFILE_ID:
+        return {"schema_version": 1, "profile_id": selected, "identity": dict(identity),
+                "accepted_stage": "fresh-candidate-acceptance-20261016/root-review-v1",
+                "library_stage": "fresh-candidate-acceptance-20261016/review-built-v3",
+                "scope": "explicit fixed fresh-build runtime export; one phone, three requests; no full-logits or performance claim",
+                "export_requires": "pinned build, independent device and root reviews; actual fixed build assets",
+                "evidence_sha256": dict(FRESH_EVIDENCE)}
     if selected == SOURCE_PROFILE_ID:
         return {"schema_version": 1, "profile_id": selected, "identity": dict(identity),
                 "accepted_stage": "clean-source-build-20261015/recipe-v1/link-fix-v1",
@@ -330,6 +361,126 @@ def export_source_bundle(output, source_build, root=None, *, records_root=None, 
     return result
 
 
+def resolve_fresh_build(source_build, root=None, *, records_root=None, artifact_map=None):
+    """Admit only the explicitly reviewed 82b18102 build, not arbitrary receipts.
+
+    Five external pins bind preparation, build and independent/root reviews.
+    Relocation changes locations only. Historical aliases are resolved before
+    checking physical build assets; explicit mapped paths forbid all links.
+    """
+    root = Path(ROOT if root is None else root).resolve()
+    stage = _plain_path(root / FRESH_STAGE if records_root is None else records_root)
+    supplied = _plain_path(source_build)
+    if not stage.is_dir() or supplied != _plain_path(stage / FRESH_MANIFEST):
+        raise ValueError("不是受审的fresh-build最终manifest")
+    documents, hashes = {}, {}
+    for relative, expected in FRESH_EVIDENCE.items():
+        path = _plain_path(stage / relative)
+        if not path.is_relative_to(stage) or not path.is_file():
+            raise ValueError("fresh-build证据越界或不是文件")
+        hashes[relative] = sha(path)
+        _equal(hashes[relative], expected, "fresh evidence " + relative)
+        documents[relative] = _read(path)
+    for key, relative in (("source_build_manifest_sha256", FRESH_MANIFEST),
+                          ("prepared_sha256", "build-v3/prepared.json"),
+                          ("build_review_sha256", "review-built-v3/build-review.json"),
+                          ("generation_review_sha256", "review-device-v2/raw-acceptance.json"),
+                          ("root_review_sha256", "root-review-v1/acceptance.json")):
+        _equal(hashes[relative], FRESH_IDENTITY[key], key)
+    manifest = documents[FRESH_MANIFEST]
+    prepared = documents["build-v3/prepared.json"]
+    build = documents["review-built-v3/build-review.json"]
+    phone = documents["review-device-v2/raw-acceptance.json"]
+    review = documents["root-review-v1/acceptance.json"]
+    for doc, label in ((build, "build"), (phone, "device"), (review, "root")):
+        _equal(doc.get("accepted"), True, label + " accepted")
+    checks = build.get("checks")
+    if not isinstance(checks, dict) or not checks or any(value is not True for value in checks.values()):
+        raise ValueError("fresh-build完整审核未通过")
+    for doc in (build, review):
+        for key, expected in (("actual_compiled_object_count", 565), ("kleidi_actual_object_count", 101),
+                              ("archive_member_count", 565)):
+            _equal(doc.get(key), expected, key)
+    for doc in (phone, review):
+        for key, expected in (("native_sessions", 1), ("requests", 3), ("new", 2), ("chunks", 12),
+                              ("actual_forwards", 21), ("native_exit", 0), ("runner_exit", 0),
+                              ("production_admitted", False)):
+            _equal(doc.get(key), expected, "device/root " + key)
+    for key, expected in (("full", 15), ("trunk", 6), ("decode_included_in_full", 12),
+                          ("independent_of_candidate_verifier", True), ("cleanup_commands_exit0", 11),
+                          ("worker_absence_raw", 2)):
+        _equal(phone.get(key), expected, "device " + key)
+    for key, expected in (("build_and_generation_chain_verified", True), ("post_build_inputs_unchanged", True),
+                          ("root_direct_session_review", True), ("full_logits_verified", False),
+                          ("stable_performance_claim", False), ("candidate_status", "candidate_pending")):
+        _equal(review.get(key), expected, "root " + key)
+    for key in ("binary_sha256", "library_sha256"):
+        _equal(build.get(key), FRESH_IDENTITY[key], "build " + key)
+    _equal(phone.get("binary_sha256"), FRESH_IDENTITY["binary_sha256"], "device binary")
+    for key in ("source_commit", "binary_sha256", "library_sha256", "source_sha256", "helper_sha256",
+                "prepared_sha256"):
+        _equal(manifest.get(key), FRESH_IDENTITY[key], "manifest " + key)
+    for key, expected in (("actual_exit", 0), ("compilation_performed", True), ("archive_member_count", 565),
+                          ("diagnostic", False), ("source_path", "apps/android/phone_chat_plan_worker.cpp"),
+                          ("helper_path", "apps/android/prefill_trunk_reuse.hpp")):
+        _equal(manifest.get(key), expected, "manifest " + key)
+    _equal(manifest.get("actual_exits"), {"configure": 0, "compile": 0, "link": 0, "archive-members": 0},
+           "build actual exits")
+    _equal(prepared.get("source_commit"), FRESH_IDENTITY["source_commit"], "prepared source")
+    for relative, key in (("apps/android/phone_chat_plan_worker.cpp", "source_sha256"),
+                          ("apps/android/prefill_trunk_reuse.hpp", "helper_sha256")):
+        _equal(prepared.get("input_sha256", {}).get(relative), FRESH_IDENTITY[key], "prepared " + key)
+    mapped, map_sha = _source_artifacts(artifact_map) if artifact_map is not None else ({}, None)
+    # Default historical paths may traverse the accepted build alias, but only
+    # resolved physical files are subsequently checked. Explicit maps stay strict.
+    binary = mapped["binary"] if mapped else Path(manifest["binary_path"]).resolve(strict=True)
+    library = mapped["library"] if mapped else Path(manifest["library_path"]).resolve(strict=True)
+    frozen = mapped["source_inputs_directory"] if mapped else Path(prepared["worker_directory"]).resolve(strict=True)
+    inputs = {"binary": binary, "library": library,
+              "worker": root / "apps/android/phone_chat_plan_worker.cpp",
+              "helper": root / "apps/android/prefill_trunk_reuse.hpp",
+              "built_worker": frozen / "phone_chat_plan_worker.cpp",
+              "built_helper": frozen / "prefill_trunk_reuse.hpp"}
+    input_hashes = {}
+    for role, value in inputs.items():
+        path = _plain_path(value)
+        if not path.is_file():
+            raise ValueError("fresh-build输入不是普通文件: " + role)
+        key = {"binary": "binary_sha256", "library": "library_sha256", "worker": "source_sha256",
+               "helper": "helper_sha256", "built_worker": "source_sha256", "built_helper": "helper_sha256"}[role]
+        input_hashes[role] = sha(path)
+        _equal(input_hashes[role], FRESH_IDENTITY[key], "fresh input " + role)
+        inputs[role] = path
+    result = {"identity": dict(FRESH_IDENTITY), "evidence_sha256": hashes,
+              "inputs": {role: str(path) for role, path in inputs.items()}, "input_sha256": input_hashes}
+    if artifact_map is not None:
+        result["artifact_map_sha256"] = map_sha
+    return result
+
+
+def export_fresh_bundle(output, source_build, root=None, *, records_root=None, artifact_map=None):
+    """Export only this fixed reviewed build; retain all failed output originals."""
+    output = Path(output).expanduser().absolute()
+    if output.exists() or output.is_symlink():
+        raise FileExistsError("导出目录已存在，保留原件: " + str(output))
+    before = resolve_fresh_build(source_build, root, records_root=records_root, artifact_map=artifact_map)
+    output.mkdir(parents=True, exist_ok=False)
+    for role in ("binary", "worker", "helper"):
+        with (output / FILES[role]).open("xb") as target:
+            target.write(Path(before["inputs"][role]).read_bytes())
+    save(output / FILES["runtime_build"], runtime_document(FRESH_PROFILE_ID))
+    save(output / FILES["provenance"], provenance_document(FRESH_PROFILE_ID))
+    if before != resolve_fresh_build(source_build, root, records_root=records_root, artifact_map=artifact_map):
+        raise ValueError("导出期间fresh-build输入变化；保留目录，不得运行")
+    save(output / "profile.json", profile_document(FRESH_PROFILE_ID))
+    result = resolve_profile(output / "profile.json")
+    save(output / "export-receipt.json", {"profile_id": FRESH_PROFILE_ID,
+         "source_before": before["input_sha256"], "source_after": before["input_sha256"],
+         "evidence_sha256": before["evidence_sha256"], "output_profile_sha256": result["profile_sha256"],
+         "deployment_performed": False, "model_requests": 0})
+    return result
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -340,6 +491,11 @@ def main(argv=None):
     source.add_argument("--source-build", required=True, help="已验收link-fix-v1/build.json")
     source.add_argument("--records-root", help="搬移后的固定三份原始验收证据根；不修改证据内容")
     source.add_argument("--artifact-map", help="独立JSON路径映射；相对路径以此文件所在目录为根")
+    fresh = commands.add_parser("export-fresh", help="导出固定已审fresh构建；不编译、不部署、不包含权重")
+    fresh.add_argument("--output", required=True)
+    fresh.add_argument("--source-build", required=True, help="固定受审build-v3/build.json")
+    fresh.add_argument("--records-root", help="搬移后的固定五份原始证据根；不修改内容")
+    fresh.add_argument("--artifact-map", help="独立JSON路径映射；仅改变固定资产位置")
     resolve = commands.add_parser("resolve", help="只读验证运行包，不连接手机")
     resolve.add_argument("--profile", required=True)
     resolve.add_argument("--adb-path")
@@ -350,6 +506,9 @@ def main(argv=None):
         elif args.command == "export-source":
             result = export_source_bundle(args.output, args.source_build,
                                           records_root=args.records_root, artifact_map=args.artifact_map)
+        elif args.command == "export-fresh":
+            result = export_fresh_bundle(args.output, args.source_build,
+                                         records_root=args.records_root, artifact_map=args.artifact_map)
         else:
             result = resolve_profile(args.profile)
         if args.command == "resolve":

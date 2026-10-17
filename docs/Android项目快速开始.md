@@ -133,3 +133,13 @@ python scripts/android/phone_candidate_validation.py --candidate candidate.json 
 ```
 
 尖括号是待替换内容，不可原样执行；输出目录须尚不存在。工具不会生成可信参考或自动提升候选。当前真实正例使用既有已验证程序，不是任意新编程序的验收证明。概念与边界见[候选设备验证](Android待验候选怎样进入手机-20261016.md)。日常提问继续使用上面的正式聊天入口。
+
+## 可选：本轮重新构建并受审的新包（2026-10-17）
+
+本机新包已导出。正式聊天命令如下；日常输出预算默认64，不是验证场景的4token：
+
+```powershell
+python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --plan-profile "build/fresh-runtime-client-20261017/runtime/手机运行包 空格/profile.json"
+```
+
+需要当前手机ADB可用。新包只含程序与小型身份文件，使用手机现有模型；旧两种profile仍支持。`export-fresh`只接受本次明确受审的五份记录和固定资产，不接受任意candidate或自签accepted字段；公开仓库不分发实际包或模型，其他新构建需要独立审查。职责、验证结果和范围见[受审程序到聊天入口](Android受审程序怎样进入聊天入口-20261017.md)。

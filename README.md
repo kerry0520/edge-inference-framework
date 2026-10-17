@@ -117,3 +117,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 新增[候选怎样进入手机验证](docs/Android待验候选怎样进入手机-20261016.md)，见[有限验证范围](evidence/candidate-device-validation-20261016/README.md)。
 
 新增[新程序与源码的对应关系](docs/Android新程序如何证明来自源码-20261016.md)，见[新构建到手机的范围](evidence/fresh-candidate-20261016/README.md)。
+
+新增[受审程序到聊天入口](docs/Android受审程序怎样进入聊天入口-20261017.md)，[交付范围](evidence/fresh-runtime-delivery-20261017/README.md)。

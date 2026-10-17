@@ -55,3 +55,13 @@ python scripts/android/build_mnn_source.py prepare-retry --prepared "原记录�
 审核新prepared后仍用build子命令执行。新的计划明确记录源、依赖、worker源码与新对象/库/程序的位置；会在编译前重新核源树，完整重编所有对象。它不延续失败目录的增量进度，也不复制或修改旧对象。
 
 `prepare-retry` 用于已保存的宿主环境构建失败之后：输入原 prepared.json 与审定 SHA，只复用已经导出并固定的源码、依赖和 worker 源码目录，创建全新的对象、库、程序、临时文件和日志目录。它不能继续原对象构建，也不会删除失败产物；新计划需再次审定 SHA。`build` 仍完整核对源码/依赖树，并从空对象目录开始。显式 TEMP/TMP 指向本次拥有的 ASCII tmp 目录，并保存在命令记录中。
+
+## 导出本轮明确受审的新构建
+
+```powershell
+python scripts/android/phone_plan_profile.py export-fresh --source-build "results/android/fresh-candidate-acceptance-20261016/build-v3/build.json" --output "新的运行包目录"
+```
+
+输出目录必须不存在。入口核五份固定证据、实际程序/库/源码与实编快照，导出前后输入一致才写profile；失败保留目录但无可选profile。可用--records-root和--artifact-map搬移这些固定输入，不能改变身份。包不含模型、静态库、工具链或ADB，导出后解析只读包内文件。
+
+此命令仅适用于已明确纳入的82b18102程序与受审记录，实际记录和资产不随公开仓库分发；不能把任意新编产物或candidate.json直接填入获得正式资格。旧export/export-source与原profile保持。说明见[受审程序怎样进入聊天入口](../../../docs/Android受审程序怎样进入聊天入口-20261017.md)。
