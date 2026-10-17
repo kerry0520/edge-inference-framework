@@ -32,17 +32,23 @@
 
 推理主线：消息 → token IDs → prefill/decode → MNN Module/Session/Pipeline → Execution → CPU kernel → logits/采样 → 流式回答。
 
+## 完整客户端包
+
+新增 `phone_client_bundle.py export/inspect`，把13份客户端模块和6份已验运行文件组成可搬移包。包内显式选择 `runtime/profile.json`，无需追溯旧实验构建目录；模型、Python、已配对手机及ADB仍由环境准备。启动与职责见[完整客户端包](docs/Android完整客户端包与启动方式-20261017.md)。本仓库不分发包含原生程序的实际包。
+
+19项离线测试通过；已有fresh资产真实导出并搬到中文空格路径后，在固定手机上完成1次4-token正式CLI请求，完整签名匹配参考、退出清理与使用后检查通过。短输入未触发主干计划命中，不新增回答质量、优化正确性或性能承诺；也不是新电脑从零复现。见[派生验收摘要](evidence/client-bundle-20261017/README.md)。
+
 ## 运行与复现范围
 
 本仓库提供代码和阶段说明，**不包含模型权重、NDK/ADB、MNN 编译产物或手机缓存**。
 
-手机运行需要 Python 3.11、已配对 ADB、Android ARM64 设备、Qwen3-0.6B MNN 模型，以及与当前源码匹配的固定 MNN 构建。已配置环境的入口：
+手机运行需要 Python 3.11、已配对 ADB、Android ARM64 设备、Qwen3-0.6B MNN 模型，以及与当前源码匹配的固定 MNN 构建。历史已配置项目目录的入口（新的独立包使用上面的显式profile方式）：
 
 ```powershell
 python scripts/android/phone_chat.py --stats --mode kv
 ```
 
-当前脚本保留了已验收设备与资产身份约束，并有历史构建目录依赖；不是任意新电脑/任意手机 clone 后即可运行的一键安装包。通用配置与从零构建入口仍在整理。不要用未匹配库替换固定构建后沿用已有验收结论。
+当前脚本保留了已验收设备与资产身份约束，并有历史构建目录依赖；不是任意新电脑/任意手机 clone 后即可运行的一键安装包。已补固定配方构建与已验资产导出；任意新构建准入和新电脑从零复现仍需独立验证。不要用未匹配库替换固定构建后沿用已有验收结论。
 
 不需要模型或手机的协议/统计测试：
 

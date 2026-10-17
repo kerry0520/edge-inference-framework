@@ -1,0 +1,46 @@
+{
+  "kind": "derived_summary_not_raw_device_evidence",
+  "offline_tests": 19,
+  "actual_fresh_exports": 1,
+  "client_modules": 13,
+  "runtime_files": 6,
+  "export_original_inspect_relocated_inspect_exits": [
+    0,
+    0,
+    0
+  ],
+  "wrong_manifest_and_existing_output_exits": [
+    1,
+    1
+  ],
+  "formal_model_requests": 1,
+  "input_tokens": 19,
+  "output_tokens": 4,
+  "full_reference_signature_matched": true,
+  "model_files_unchanged": 5,
+  "formal_cli_native_launcher_exits": [
+    0,
+    0,
+    0
+  ],
+  "cleanup_commands": 11,
+  "all_cleanup_actual_exits_zero": true,
+  "worker_and_owned_forward_absent": true,
+  "managed_content_files": 20,
+  "content_and_manifest_unchanged": true,
+  "post_use_inspect_exit": 0,
+  "trunk_calls": 0,
+  "full_calls": 5,
+  "new_native_compilations": 0,
+  "source_sha256": {
+    "scripts/android/phone_client_bundle.py": "c21edeeea3c61b4f8702a4e5e6076fd50a3ef504a3c7e92168690900ee837358",
+    "tests/android/test_phone_client_bundle.py": "377987ba3c7fc6717dad64552a9661de25fa9071989ea74eb52ed0a2db78ab88"
+  },
+  "unverified": [
+    "new computer from zero",
+    "other devices",
+    "answer quality",
+    "new performance claim",
+    "actual export of other two supported fixture identities"
+  ]
+}
