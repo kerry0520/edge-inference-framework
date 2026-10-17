@@ -1,0 +1,36 @@
+{
+  "scope": "Isolated sample-observer diagnostic linked against the audited fresh library; fixed Mi11/model/CPU settings",
+  "requests_per_arm": 9,
+  "native_processes": 2,
+  "baseline_rerun": false,
+  "sample_pairs": 36,
+  "vocabulary_size": 151936,
+  "compared_float_pairs": 5469696,
+  "all_bitwise_equal": true,
+  "max_abs_error": 0,
+  "route_totals": {
+    "baseline": {
+      "full": 58,
+      "trunk": 0,
+      "decode_included_in_full": 36,
+      "cache_hits": 0
+    },
+    "candidate": {
+      "full": 45,
+      "trunk": 13,
+      "decode_included_in_full": 36,
+      "cache_hits": 5
+    }
+  },
+  "model_assets_unchanged": true,
+  "unit_tests": 15,
+  "unit_tests_breakdown": {
+    "build_prepare": 4,
+    "comparison": 7,
+    "local_collector": 4
+  },
+  "production_worker_changed": false,
+  "production_elf_direct_logits_verified": false,
+  "performance_claim": false,
+  "automatic_profile_admission": false
+}
