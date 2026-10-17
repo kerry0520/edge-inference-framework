@@ -1,0 +1,32 @@
+{
+  "kind": "derived_summary_not_original_build_receipt",
+  "source_sha256": {
+    "scripts/android/phone_source_build_audit.py": "8acb977042b7dcc3bee13a6b8786e1f64255ece7f02453e6094dfbe2299fd8a9",
+    "scripts/android/phone_source_build_audit_replay.py": "92c3f22e8620ad3c9a6270d5a6f57fbda14ccf65e3b4f02606f1ccf873834081",
+    "tests/android/test_phone_source_build_audit_replay.py": "214d992fffff8d98aa05b049dd4bd39740a7bc5f349a8560204f3a9996bfff8f"
+  },
+  "unit_tests": 35,
+  "public_test_actual_exit": 0,
+  "original_readonly_native_commands": 4,
+  "replay_current_native_commands": 0,
+  "replay_process_attempts": 0,
+  "bound_outputs": 15,
+  "bound_inputs_independently_hashed": 612,
+  "historical_aliases_rechecked": 13,
+  "actual_object_count": 565,
+  "archive_member_count": 565,
+  "kleidi_object_count": 101,
+  "original_audit_cli_exit": 0,
+  "replay_cli_exit": 0,
+  "real_negative_exits": [
+    1,
+    1
+  ],
+  "float_negative_resealed": true,
+  "model_requests": 0,
+  "compilations": 0,
+  "production_admitted": false,
+  "candidate_status": "candidate_pending",
+  "version_note": "Original native audit used earlier replay/seal helper b585; strengthened replay uses92c3; auditor8acb unchanged. No repeated native inspection.",
+  "scope": "Existing fixed build source/evidence consistency; not arbitrary candidate admission, independent provenance, model correctness, performance or a fresh PC build"
+}

@@ -46,6 +46,8 @@ GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试，显�
 
 已登记的ee5/2cc/fresh82b均可使用同一离线会话检查器。四组历史CLI记录重放和坏记录拒绝见[本轮摘要](evidence/fresh-session-verification-20261018/README.md)，计数和执行主线见[会话验收](docs/当前运行包的会话验收与执行路径-20261018.md)。重读原件不算新的手机运行或性能结果。
 
+源码构建审查现提供[原件绑定与纯Python重放](docs/构建审查原件与离线重放-20261018.md)：原审查4条只读LLVM检查，重放当前0条，保留候选待验身份；[派生摘要](evidence/source-audit-replay-20261018/README.md)区分新审查、已有构建与未验证范围。它不开放任意新程序聊天，也不代替模型验证。
+
 ## 运行与复现范围
 
 本仓库提供代码和阶段说明，**不包含模型权重、NDK/ADB、MNN 编译产物或手机缓存**。

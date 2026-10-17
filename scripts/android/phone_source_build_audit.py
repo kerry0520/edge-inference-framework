@@ -367,7 +367,8 @@ def tool(output, label, argv, state):
     return stdout.decode("utf-8", errors="strict")
 
 
-def audit(args, output, state, *, root=ROOT):
+def audit(args, output, state, *, root=ROOT, tool_runner=None, write_receipt=True):
+    runner = tool if tool_runner is None else tool_runner
     evidence = Evidence()
     prepared_path, plan = candidate.read_pinned(args.prepared, args.expected_prepared_sha256)
     evidence.file(prepared_path, args.expected_prepared_sha256)
@@ -440,11 +441,11 @@ def audit(args, output, state, *, root=ROOT):
                 and descriptor["assets"] == assets, "candidate does not bind this build and four assets")
     # Recheck before running the only permitted native commands as well as after.
     evidence.unchanged()
-    observed_members = tool(output, "archive-members", [ar, "t", library], state).splitlines()
+    observed_members = runner(output, "archive-members", [ar, "t", library], state).splitlines()
     require(observed_members == members, "current archive members differ from original raw record")
-    header = tool(output, "elf-header", [readelf, "-h", binary], state)
-    dynamic = tool(output, "elf-dynamic", [readelf, "-d", binary], state)
-    segments = tool(output, "elf-segments", [readelf, "-l", binary], state)
+    header = runner(output, "elf-header", [readelf, "-h", binary], state)
+    dynamic = runner(output, "elf-dynamic", [readelf, "-d", binary], state)
+    segments = runner(output, "elf-segments", [readelf, "-l", binary], state)
     derived["needed"] = inspect_elf(header, dynamic, segments)
     evidence.unchanged()
     save(output / "derived.json", derived)
@@ -459,6 +460,9 @@ def audit(args, output, state, *, root=ROOT):
               "actual_kleidi_object_count": derived["actual_kleidi_object_count"],
               "scope": "Fixed recipe, selected source/client bytes and existing build evidence; no full tree/sysroot audit, device correctness, or performance claim."}
     save(output / "audit.json", result)
+    if write_receipt and tool_runner is None:
+        from phone_source_build_audit_replay import create_receipt
+        create_receipt(args, output)
     return result
 
 
