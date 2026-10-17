@@ -17,6 +17,7 @@ RECORDS = ROOT / "results/android/phone-entry-20261006/requests"
 RELEASE = "/data/local/tmp/MNN/framework-release-20261006"
 MODEL = "/data/local/tmp/MNN/Qwen3-0.6B-MNN-modelscope"
 KNOWN_IP = "192.168.5.30"
+EXPECTED_HARDWARE_SERIAL = "1e7c759e"
 EXPECTED_MODEL = "M2011K2C"
 SOURCE = "d407447ed56c4121a11ccbd266dc184ca1ead0c2"
 MANIFEST_SHA = "21dedf6c803a8aa7fa4d48d52f545123ab64c6e23eb114e723faf184477ebfec"
@@ -62,6 +63,54 @@ def verify_binary():
     return binary
 
 
+def _private_adb_endpoint(value):
+    """Only canonical RFC1918 IPv4 endpoints advertised by ADB are eligible."""
+    import ipaddress
+    match = re.fullmatch(r"([0-9.]+):([0-9]{1,5})", value)
+    if not match or not 1 <= int(match[2]) <= 65535:
+        return False
+    try:
+        address = ipaddress.IPv4Address(match[1])
+    except ipaddress.AddressValueError:
+        return False
+    return any(address in ipaddress.IPv4Network(network) for network in
+               ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
+
+
+def _adb_serial_rank(serial):
+    if serial == EXPECTED_HARDWARE_SERIAL:
+        return 0
+    if re.fullmatch(r"adb-" + re.escape(EXPECTED_HARDWARE_SERIAL) + r"-[A-Za-z0-9_-]+\._adb-tls-connect\._tcp\.?", serial):
+        return 1
+    if _private_adb_endpoint(serial):
+        return 3
+    # USB serials are opaque, but exclude addresses, service aliases, and command-like tokens.
+    if re.fullmatch(r"[A-Za-z0-9_-]+", serial):
+        return 2
+    return None
+
+
+def _online_adb_candidates(text):
+    candidates = set()
+    for line in text.splitlines():
+        fields = line.split()
+        if len(fields) >= 2 and fields[1] == "device":
+            rank = _adb_serial_rank(fields[0])
+            if rank is not None:
+                candidates.add((rank, fields[0], False))
+    return candidates
+
+
+def _mdns_adb_candidates(text):
+    candidates = set()
+    for line in text.splitlines():
+        fields = line.split()
+        if len(fields) == 3 and fields[1].rstrip(".") == "_adb-tls-connect._tcp" and _private_adb_endpoint(fields[2]):
+            # Service labels never grant trust; every connected endpoint must pass getprop identity checks.
+            candidates.add((3, fields[2], True))
+    return candidates
+
+
 class Adb:
     def __init__(self, serial=None):
         self.exe = ROOT / "tools/android/platform-tools/adb.exe"
@@ -82,28 +131,66 @@ class Adb:
     def shell(self, command, check=True, timeout=30):
         return self.call("shell", command, check=check, timeout=timeout)
 
-    def select(self):
-        if not self.serial:
-            devices = self.call("devices", targeted=False).decode("utf-8", "replace").replace("\r\n", "\n")
-            matches = re.findall(r"^(" + re.escape(KNOWN_IP) + r":\d+)\s+device$", devices, re.M)
-            if matches:
-                self.serial = matches[0]
-            else:
-                mdns = self.call("mdns", "services", targeted=False).decode("utf-8", "replace").replace("\r\n", "\n")
-                matches = re.findall(r"_adb-tls-connect\._tcp\s+(" + re.escape(KNOWN_IP) + r":\d+)", mdns)
-                if not matches:
-                    raise RuntimeError("未发现已配对手机；请打开无线调试，必要时重新配对或显式--serial。没有扫描局域网。")
-                self.serial = matches[0]
-                self.call("connect", self.serial, targeted=False)
-        model = self.shell("getprop ro.product.model").decode().strip()
+    def _identity(self):
+        model = self.shell("getprop ro.product.model", timeout=5).decode("utf-8", "replace").strip()
         if model != EXPECTED_MODEL:
             raise RuntimeError("设备型号核对失败: " + model)
-        hardware_serial = self.shell("getprop ro.serialno").decode().strip()
-        if not hardware_serial:
-            hardware_serial = self.shell("getprop ro.boot.serialno").decode().strip()
-        if not hardware_serial:
+        hardware = self.shell("getprop ro.serialno", timeout=5).decode("utf-8", "replace").strip()
+        if not hardware:
+            hardware = self.shell("getprop ro.boot.serialno", timeout=5).decode("utf-8", "replace").strip()
+        if not hardware:
             raise RuntimeError("无法取得稳定设备序列号，不能建立安装身份。")
-        return {"serial": self.serial, "hardware_serial": hardware_serial, "model": model, "online": True}
+        return {"serial": self.serial, "hardware_serial": hardware, "model": model, "online": True}
+
+    def select(self):
+        # Explicit selection keeps the historical identity contract; callers may impose stricter policy.
+        if self.serial:
+            return self._identity()
+        attempted = set()
+        failures = []
+
+        def probe(candidates):
+            verified = []
+            for rank, serial, connect in sorted(candidates):
+                if verified and rank > verified[0][0]:
+                    break
+                if serial in attempted or len(attempted) >= 8:
+                    continue
+                attempted.add(serial)
+                self.serial = serial
+                try:
+                    if connect:
+                        self.call("connect", serial, targeted=False, timeout=5)
+                    identity = self._identity()
+                    if identity["hardware_serial"] == EXPECTED_HARDWARE_SERIAL:
+                        verified.append((rank, serial, identity))
+                except (RuntimeError, OSError, subprocess.TimeoutExpired) as exc:
+                    failures.append(type(exc).__name__ + ": " + serial)
+                finally:
+                    self.serial = None
+            if not verified:
+                return None
+            best_rank = min(item[0] for item in verified)
+            best = [item for item in verified if item[0] == best_rank]
+            if len(best) != 1:
+                raise RuntimeError("多个同优先级端点报告目标身份，请显式 --serial，避免自动选择歧义。")
+            self.serial = best[0][1]
+            return best[0][2]
+
+        devices = self.call("devices", targeted=False, timeout=5).decode("utf-8", "replace")
+        result = probe(_online_adb_candidates(devices))
+        if result:
+            return result
+        try:
+            mdns = self.call("mdns", "services", targeted=False, timeout=5).decode("utf-8", "replace")
+        except (RuntimeError, OSError, subprocess.TimeoutExpired) as exc:
+            failures.append(type(exc).__name__ + ": mdns")
+            mdns = ""
+        result = probe(_mdns_adb_candidates(mdns))
+        if result:
+            return result
+        raise RuntimeError("未发现通过稳定硬件身份核验的目标手机；请打开无线调试，必要时重新配对或显式 --serial。"
+                           "没有扫描局域网。探测端点数: " + str(len(attempted)) + "; " + ", ".join(failures))
 
     def push_verified(self, file, remote):
         self.call("push", str(file), remote)

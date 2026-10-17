@@ -1,0 +1,28 @@
+{
+  "scope": "Fixed target phone, known paired ADB transports and private IPv4 addresses from inventory/mDNS; no LAN scan",
+  "old_helper_auto_failed_while_explicit_identity_passed": true,
+  "new_helper_auto_passed": true,
+  "readiness_auto_passed": true,
+  "independent_client_modules": 12,
+  "formal_cli_without_serial": true,
+  "formal_requests": 1,
+  "input_tokens": 19,
+  "output_tokens": 4,
+  "reference_signature_equal": true,
+  "model_assets_unchanged": 5,
+  "cli_worker_launcher_actual_exits": [
+    0,
+    0,
+    0
+  ],
+  "cleanup_actual_exit_zero_count": 11,
+  "model_worker_absence_and_forward_cleanup_verified": true,
+  "unit_tests_run": 83,
+  "unit_tests_ok": 82,
+  "unit_tests_existing_permission_skip": 1,
+  "mdns_fallback_live_exercised": false,
+  "mdns_fallback_mock_covered": true,
+  "native_program_changed": false,
+  "performance_claim": false,
+  "host_adb_log_permissions_fixed": false
+}

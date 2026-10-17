@@ -254,6 +254,61 @@ class RuntimeReadinessTests(unittest.TestCase):
         self.assertTrue(any("getprop ro.serialno" in " ".join(argv) for argv, _ in self.calls))
         self.assertFalse(any(argv[1:2] in (["connect"], ["mdns"]) for argv, _ in self.calls))
 
+    def test_new_ip_online_is_selected_and_identity_read_once(self):
+        self.transport = "192.168.5.4:40895"
+        def new_inventory(argv, **kwargs):
+            if argv[1:2] == ["devices"]:
+                self.calls.append((argv, kwargs))
+                return subprocess.CompletedProcess(argv, 0,
+                    ("List of devices attached\n" + self.transport + " device\n").encode(), b"")
+            return self.respond(argv, **kwargs)
+        with patch.object(subprocess, "run", side_effect=new_inventory):
+            report = self.check(device=True)
+        self.assertTrue(report["accepted"])
+        self.assertEqual(report["device"]["identity"]["serial"], self.transport)
+        self.assertEqual(sum("getprop ro.serialno" in " ".join(argv) for argv, _ in self.calls), 1)
+        self.assertFalse(any(argv[1:2] in (["connect"], ["mdns"]) for argv, _ in self.calls))
+
+    def test_new_ip_mdns_is_connected_before_property_checks(self):
+        self.transport = "192.168.5.4:40895"
+        def discovered(argv, **kwargs):
+            if argv[1:2] == ["devices"]:
+                self.calls.append((argv, kwargs))
+                return subprocess.CompletedProcess(argv, 0, b"List of devices attached\n", b"")
+            if argv[1:2] == ["mdns"]:
+                self.calls.append((argv, kwargs))
+                text = "paired-name _adb-tls-connect._tcp " + self.transport + "\n"
+                return subprocess.CompletedProcess(argv, 0, text.encode(), b"")
+            if argv[1:2] == ["connect"]:
+                self.calls.append((argv, kwargs))
+                self.assertEqual(argv[2], self.transport)
+                return subprocess.CompletedProcess(argv, 0, b"connected\n", b"")
+            return self.respond(argv, **kwargs)
+        with patch.object(subprocess, "run", side_effect=discovered):
+            report = self.check(device=True)
+        self.assertTrue(report["accepted"])
+        self.assertEqual(report["device"]["identity"]["serial"], self.transport)
+        self.assertEqual(sum(argv[1:2] == ["connect"] for argv, _ in self.calls), 1)
+        self.assertTrue(all(row["actual_exit"] == 0 for row in report["commands"]))
+
+    def test_automatic_same_model_wrong_hardware_never_reads_model_assets(self):
+        self.transport = "192.168.5.4:40895"
+        def wrong_phone(argv, **kwargs):
+            if argv[1:2] == ["devices"]:
+                self.calls.append((argv, kwargs))
+                return subprocess.CompletedProcess(argv, 0, (self.transport + " device\n").encode(), b"")
+            if argv[1:2] == ["mdns"]:
+                self.calls.append((argv, kwargs))
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if " ".join(argv).endswith("getprop ro.serialno"):
+                self.calls.append((argv, kwargs))
+                return subprocess.CompletedProcess(argv, 0, b"different-hardware\n", b"")
+            return self.respond(argv, **kwargs)
+        with patch.object(subprocess, "run", side_effect=wrong_phone):
+            report = self.check(device=True)
+        self.assertFalse(report["accepted"])
+        self.assertFalse(any("test -f" in " ".join(argv) for argv, _ in self.calls))
+
 
 if __name__ == "__main__":
     unittest.main()

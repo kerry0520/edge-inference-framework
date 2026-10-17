@@ -7,12 +7,12 @@ import argparse
 import importlib
 import json
 from pathlib import Path
-import re
 import shlex
 import subprocess
 import sys
 
 from phone_plan_profile import LIMITS, resolve_adb_path, resolve_profile
+from phone_infer import Adb
 
 CLIENT_MODULES = (
     "phone_chat", "phone_chat_plan", "phone_plan_profile", "phone_chat_session",
@@ -21,7 +21,6 @@ CLIENT_MODULES = (
 )
 ASSET_NAMES = ("llm.mnn", "llm.mnn.weight", "llm_config.json", "tokenizer.txt",
                "tokenizer-android-lf.txt")
-KNOWN_IP = "192.168.5.30"
 TIMEOUT = 15
 
 
@@ -29,14 +28,14 @@ def _text(value):
     return value.decode("utf-8", "replace") if isinstance(value, bytes) else value or ""
 
 
-def _run(report, adb, *args):
+def _run(report, adb, *args, timeout=TIMEOUT):
     argv = [str(adb), *args]
     record = {"argv": argv, "actual_exit": None, "timed_out": False,
               "stdout": "", "stderr": ""}
     report["commands"].append(record)
     try:
         result = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True,
-                                timeout=TIMEOUT)
+                                timeout=timeout)
         record.update(actual_exit=result.returncode, stdout=_text(result.stdout),
                       stderr=_text(result.stderr))
     except subprocess.TimeoutExpired as error:
@@ -51,38 +50,29 @@ def _run(report, adb, *args):
 
 
 def _select_device(report, adb, serial):
-    devices = _run(report, adb, "devices", "-l")
-    online = []
-    for line in devices.splitlines():
-        fields = line.split()
-        if len(fields) >= 2 and fields[1] == "device":
-            online.append(fields[0])
-    if serial is not None and serial in online:
-        return serial
     if serial is not None:
+        devices = _run(report, adb, "devices", "-l")
+        online = {fields[0] for line in devices.splitlines()
+                  if len(fields := line.split()) >= 2 and fields[1] == "device"}
+        if serial in online:
+            return serial
         # An explicitly supplied current endpoint need not be advertised by mDNS.
         # Identity is still checked before any model-file checks.
         _run(report, adb, "connect", serial)
         return serial
-    if serial is None:
-        # ADB can list USB, paired service and IP transports for the same phone.
-        # Prefer the stable hardware transport, then the paired service, then IP.
-        groups = ([item for item in online if item == LIMITS["hardware_serial"]],
-                  [item for item in online if item.startswith("adb-" + LIMITS["hardware_serial"] + "-")],
-                  [item for item in online if item.startswith(KNOWN_IP + ":")])
-        for candidates in groups:
-            if len(candidates) == 1:
-                return candidates[0]
-            if len(candidates) > 1:
-                raise ValueError("发现多个已记录设备连接，请提供--serial明确选择")
-    services = _run(report, adb, "mdns", "services")
-    addresses = sorted(set(re.findall(
-        r"_adb-tls-connect\._tcp\s+(" + re.escape(KNOWN_IP) + r":\d+)", services)))
-    if len(addresses) != 1:
-        raise ValueError("没有唯一可用的已配对连接；请核对无线调试或提供当前--serial。未扫描网络。")
-    selected = addresses[0]
-    _run(report, adb, "connect", selected)
-    return selected
+
+    class RecordedSelection(Adb):
+        def call(self, *args, targeted=True, check=True, timeout=TIMEOUT):
+            arguments = (("-s", self.serial) if targeted and self.serial else ()) + args
+            # Selection only issues checked reads/connects. Keep its raw exits in
+            # the readiness report rather than silently switching transports.
+            if not check:
+                raise ValueError("readiness selection requires checked commands")
+            return _run(report, adb, *arguments, timeout=timeout).encode("utf-8")
+
+    identity = RecordedSelection().select()
+    report["device"]["identity"] = identity
+    return identity["serial"]
 
 
 def check_runtime(profile_path, adb_path=None, serial=None, device=False):
@@ -112,12 +102,15 @@ def check_runtime(profile_path, adb_path=None, serial=None, device=False):
         report["device"] = {"status": "failed"}
         try:
             selected = _select_device(report, adb, serial)
-            model = _run(report, adb, "-s", selected, "shell", "getprop ro.product.model").strip()
-            hardware = _run(report, adb, "-s", selected, "shell", "getprop ro.serialno").strip()
-            if not hardware:
-                hardware = _run(report, adb, "-s", selected, "shell", "getprop ro.boot.serialno").strip()
-            report["device"]["identity"] = {"serial": selected, "model": model,
-                                              "hardware_serial": hardware}
+            identity = report["device"].get("identity")
+            if identity is None:
+                model = _run(report, adb, "-s", selected, "shell", "getprop ro.product.model").strip()
+                hardware = _run(report, adb, "-s", selected, "shell", "getprop ro.serialno").strip()
+                if not hardware:
+                    hardware = _run(report, adb, "-s", selected, "shell", "getprop ro.boot.serialno").strip()
+                identity = {"serial": selected, "model": model, "hardware_serial": hardware}
+                report["device"]["identity"] = identity
+            model, hardware = identity["model"], identity["hardware_serial"]
             if model != LIMITS["device_model"] or hardware != LIMITS["hardware_serial"]:
                 raise ValueError("手机身份不匹配固定运行包；未读取模型资产")
             assets = []

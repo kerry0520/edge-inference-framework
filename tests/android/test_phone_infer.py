@@ -52,7 +52,8 @@ class EntryTests(unittest.TestCase):
                 entry.extract_answer(raw, "cfg", "question")
 
     def test_windows_devices_connected_path(self):
-        original = (ROOT / "results/android/phone-entry-20261006/devices-final.log").read_text()
+        paired = "adb-" + entry.EXPECTED_HARDWARE_SERIAL + "-fixture._adb-tls-connect._tcp"
+        original = "List of devices attached\n192.168.5.30:40139\tdevice\n" + paired + "\tdevice\n"
         windows = original.replace("\n", "\r\n").encode()
         calls = []
         adb = entry.Adb()
@@ -60,12 +61,12 @@ class EntryTests(unittest.TestCase):
             calls.append(args)
             if args == ("devices",): return windows
             if args == ("shell", "getprop ro.product.model"): return b"M2011K2C\r\n"
-            if args == ("shell", "getprop ro.serialno"): return b"stable-phone\r\n"
+            if args == ("shell", "getprop ro.serialno"): return (entry.EXPECTED_HARDWARE_SERIAL + "\r\n").encode()
             raise AssertionError("Unexpected mDNS/connect: " + repr(args))
         adb.call = fake
         result = adb.select()
-        self.assertEqual(result["hardware_serial"], "stable-phone")
-        self.assertTrue(result["serial"].startswith("192.168.5.30:"))
+        self.assertEqual(result["hardware_serial"], entry.EXPECTED_HARDWARE_SERIAL)
+        self.assertEqual(result["serial"], paired)
         self.assertFalse(any(c[0] in ("mdns", "connect") for c in calls))
 
     def test_same_hardware_changed_wireless_port_reuses_identity(self):

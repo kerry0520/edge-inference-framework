@@ -125,3 +125,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 新增[项目自学与独立演示手册](docs/项目自学与独立演示手册-20261017.md)，集中解释请求主线、框架职责、改动与自测；[离线构建审查](docs/离线源码构建审查入口-20261017.md)将固定配方的构建证据核查整理为可复用入口，见[限定结果](evidence/source-build-audit-20261017/README.md)。
 
 新增[采样前的完整词表分数对照](docs/Android采样前的完整词表分数-20261017.md)：同受审库的隔离诊断程序两臂18题，36对完整词表行逐字节一致；主干路径与计划命中独审通过。见[范围及派生数据](evidence/sampled-logits-20261017/README.md)。不新增生产ELF直接分数或性能承诺。
+
+已修复手机换地址后自动发现误判：聊天与启动检查共享固定身份选择，独立客户端无serial正式短题及退出通过。见[地址与身份](docs/Android地址变化与手机身份-20261017.md)、[限定证据](evidence/automatic-phone-selection-20261017/README.md)。要求既有配对和可用ADB服务，未修改native模型程序。
