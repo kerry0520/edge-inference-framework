@@ -1,0 +1,88 @@
+{
+  "kind": "derived_summary_not_original_device_receipt",
+  "source_sha256": {
+    "scripts/android/phone_candidate_validation_replay.py": "c957e8fe6fe1ab24f6c20ba67e0e8572d4ce6cf968ad0099e3dd4256226c4e8c",
+    "tests/android/test_phone_candidate_validation_replay.py": "2eb2dca6f5751af5f003c2d0a990e38cef6e746831123a2e456921358c080449",
+    "scripts/android/phone_verify_session.py": "e051e2e15c8602991286ecf4604e7fe2b6214bf294a55a0e1bf014c703a4f943"
+  },
+  "fixture_tests": 34,
+  "formal_gate_tests": 11,
+  "public_targeted_test_exits": [
+    0,
+    0
+  ],
+  "cases": [
+    {
+      "case": "source2cc",
+      "historical_originals": 53,
+      "originals_unchanged": true,
+      "seal_exit": 0,
+      "replay_exit": 0,
+      "wrong_pin_exit": 1,
+      "process_attempts": 0,
+      "derived": {
+        "accepted": false,
+        "successful_requests": 3,
+        "actual_cli_exit": 0,
+        "native_exit": 0,
+        "launcher_exit": 0,
+        "actual_forwards": 21,
+        "confirmed_budget_rejections": 0,
+        "full": 15,
+        "trunk": 6,
+        "decode_included_in_full": 12,
+        "limited_device_evidence_consistent": true,
+        "candidate_status": "candidate_pending",
+        "production_admitted": false,
+        "resets": 2,
+        "cleanup_executions": 11,
+        "original_cli_actual_exit": 0,
+        "current_subprocesses": 0,
+        "current_device_commands": 0,
+        "current_model_requests": 0,
+        "compilation_performed": false,
+        "limitation": "Cleanup UUID records have no ordering timestamps; their set is checked, but removal-before-absence chronology is not independently proved. Initialization commands do not all have independent exit receipts."
+      }
+    },
+    {
+      "case": "fresh82b",
+      "historical_originals": 53,
+      "originals_unchanged": true,
+      "seal_exit": 0,
+      "replay_exit": 0,
+      "wrong_pin_exit": 1,
+      "process_attempts": 0,
+      "derived": {
+        "accepted": false,
+        "successful_requests": 3,
+        "actual_cli_exit": 0,
+        "native_exit": 0,
+        "launcher_exit": 0,
+        "actual_forwards": 21,
+        "confirmed_budget_rejections": 0,
+        "full": 15,
+        "trunk": 6,
+        "decode_included_in_full": 12,
+        "limited_device_evidence_consistent": true,
+        "candidate_status": "candidate_pending",
+        "production_admitted": false,
+        "resets": 2,
+        "cleanup_executions": 11,
+        "original_cli_actual_exit": 0,
+        "current_subprocesses": 0,
+        "current_device_commands": 0,
+        "current_model_requests": 0,
+        "compilation_performed": false,
+        "limitation": "Cleanup UUID records have no ordering timestamps; their set is checked, but removal-before-absence chronology is not independently proved. Initialization commands do not all have independent exit receipts."
+      }
+    }
+  ],
+  "resealed_false_count_exit": 1,
+  "resealed_negative_process_attempts": 0,
+  "current_device_commands": 0,
+  "current_model_requests": 0,
+  "candidate_status": "candidate_pending",
+  "production_admitted": false,
+  "scope": "Historical fixed-device evidence consistency, not fresh inference, stable performance, author authentication or generic candidate admission",
+  "collection_note": "First negative used overlapping output and was rejected before recomputation; preserved locally. Second uses new sibling output and reaches semantic rejection."
+}

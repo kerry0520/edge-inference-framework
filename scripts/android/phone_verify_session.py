@@ -93,6 +93,11 @@ def check_budget_rejections(session, ready):
 
 
 def verify(session, stdout, cli, allow_budget_rejections=False):
+    return _verify_evidence(session, stdout, cli, allow_budget_rejections)
+
+
+def _verify_evidence(session, stdout, cli, allow_budget_rejections=False, *, candidate_identity=None):
+    """Shared consistency core; only the separate pinned candidate reader opts in."""
     require(type(cli) is dict and type(cli.get('actual_exit')) is int and cli['actual_exit'] == 0, 'CLI exit must be integer zero')
     require(type(session) is dict and session.get('status') == 'closed', 'session must be closed')
     for key in ('worker_exit', 'adb_launcher_exit'):
@@ -132,7 +137,15 @@ def verify(session, stdout, cli, allow_budget_rejections=False):
     require(before == session['model_after'], 'model changed')
     binary = session['build']['binary_sha256']
     require(type(binary) is str and re.fullmatch('[0-9a-f]{64}', binary), 'binary hash')
-    require(binary in KNOWN_BINARIES.values(), 'unknown full-plan binary')
+    if candidate_identity is None:
+        require(binary in KNOWN_BINARIES.values(), 'unknown full-plan binary')
+    else:
+        require(session.get('candidate_experiment') is True and session.get('production_admitted') is False
+                and session.get('candidate_status') == 'candidate_pending' and 'runtime_profile' not in session,
+                'candidate evidence context')
+        require(binary == candidate_identity['assets']['binary']['sha256'] and
+                session['build']['source_sha256'] == candidate_identity['assets']['worker']['sha256'],
+                'candidate source/binary identity')
     require(binary == session['binary_deployed']['sha256'], 'deployment identity')
     profile = session.get('runtime_profile')
     if profile is not None:
