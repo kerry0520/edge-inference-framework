@@ -42,7 +42,7 @@
 
 [开发与验收路线](docs/公开仓库开发与验收路线-20261017.md)区分源码构建、待验候选、设备对照和正式包登记。固定两题参考现已公开，不包含权重或程序；设备链仍限定硬件身份，新构建不自动准入。
 
-GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试。当前本机公开目录为272条执行、267个不同test ID，271通过、1条因真实symlink权限跳过；5条是导入基类的重复发现。测试使用fixture/mock，不需要手机或NDK，不代表真机或性能验收。远端状态见[Actions](https://github.com/kerry0520/edge-inference-framework/actions/workflows/android-offline.yml)。
+GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试，显式启用UTF-8并使用runner临时目录。当前本机公开目录为272条执行、267个不同test ID，271通过、1条因真实symlink权限跳过；5条是导入基类的重复发现。测试使用fixture/mock，不需要手机或NDK，不代表真机或性能验收。远端状态见[Actions](https://github.com/kerry0520/edge-inference-framework/actions/workflows/android-offline.yml)。
 
 ## 运行与复现范围
 

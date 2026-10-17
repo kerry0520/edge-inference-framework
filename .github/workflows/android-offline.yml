@@ -25,4 +25,8 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run published fixture and protocol tests
+        env:
+          PYTHONUTF8: '1'
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
         run: python -B -m unittest discover -s tests/android -p "test_*.py" -v
