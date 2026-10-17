@@ -1,0 +1,21 @@
+{
+  "scope": "Existing fixed-recipe build, offline audit only",
+  "unit_fixture_tests": 17,
+  "positive_cli_actual_exit": 0,
+  "positive_native_tool_exits": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "target_object_count": 565,
+  "actual_object_count": 565,
+  "archive_member_count": 565,
+  "actual_kleidi_object_count": 101,
+  "missing_receipt_cli_actual_exit": 1,
+  "missing_receipt_native_tool_calls": 0,
+  "candidate_promoted": false,
+  "compilation_adb_model_requests": 0,
+  "whole_source_sysroot_audit": false,
+  "new_device_or_performance_claim": false
+}

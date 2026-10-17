@@ -121,3 +121,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 新增[受审程序到聊天入口](docs/Android受审程序怎样进入聊天入口-20261017.md)，[交付范围](evidence/fresh-runtime-delivery-20261017/README.md)。
 
 新增[多轮输入与拒绝后的状态](docs/Android多轮输入与拒绝后的状态-20261017.md)，[限定验收范围](evidence/fresh-lifecycle-20261017/README.md)。
+
+新增[项目自学与独立演示手册](docs/项目自学与独立演示手册-20261017.md)，集中解释请求主线、框架职责、改动与自测；[离线构建审查](docs/离线源码构建审查入口-20261017.md)将固定配方的构建证据核查整理为可复用入口，见[限定结果](evidence/source-build-audit-20261017/README.md)。
