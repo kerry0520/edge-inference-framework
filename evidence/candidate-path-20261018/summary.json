@@ -1,0 +1,22 @@
+{
+  "kind": "derived_summary_not_raw_evidence",
+  "baseline_source_sha256": "10dd617d4fe14eac79cf235e06845b6dd6e23c7d1c08b99e235991ff3c43aae7",
+  "fixed_source_sha256": "7f6c35f775d5662c9c51afc45f9dd906af3676644d89d2a8f36fde25f84954a4",
+  "fixed_test_sha256": "4f3e75685905455a882dfcbc8c527caa2e2e0b0672a107f966c2307e4fbad92e",
+  "unit_tests_fixed": 18,
+  "unit_tests_baseline": 18,
+  "fixed_test_actual_exit": 0,
+  "baseline_test_actual_exit": 1,
+  "baseline_failures": 1,
+  "direct_caller_tests": 42,
+  "direct_caller_actual_exit": 0,
+  "real_windows_83_alias": true,
+  "same_file_independently_checked": true,
+  "candidate_json_bytes_same_both_arms": true,
+  "pending_status_unchanged": true,
+  "synthetic_assets_only": true,
+  "native_executions": 0,
+  "model_requests": 0,
+  "reparse_parent_test": "mock only, no real junction validation",
+  "scope": "candidate return-path consistency only; not runtime admission, native correctness, concurrency security or all Windows alias compatibility"
+}

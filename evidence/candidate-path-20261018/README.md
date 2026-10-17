@@ -1,0 +1,7 @@
+# 候选交接路径一致性
+
+prepare回传原始路径、inspect回传规范路径，Windows真实8.3别名下同文件出现返回对象不同。本次仅让prepare写完后调用既有plain函数再回传。原始路径父目录检查仍在此前，清单内容及pending状态未改，不自动登记profile。
+
+合成资产的真实GetShortPathNameW A/B：旧版两个地址指向同一文件但返回对象不同，修复后返回一致；两臂candidate.json逐字节相同，独立审核者复核samefile及四资产摘要。固定18项测试通过；旧源码同18项只在新规范路径回归失败。直接调用者离线测试及来源SHA见summary.json。
+
+本页只公开派生摘要，原始A/B路径日志和小fixture留本地results/android/candidate-path-canonicalization-20261018。fixture中的ELF/ar头并未执行，不是实际构建或模型验证；reparse祖先测试使用mock，没有真实junction实验。不宣称解决并发文件替换、任意Windows路径/编码或其他设备适配。固定运行包与手机计算路径未变。

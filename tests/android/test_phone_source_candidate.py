@@ -71,6 +71,28 @@ class CandidateTests(unittest.TestCase):
         result = self.prepare(self.document(True))
         self.assertEqual(self.check_saved(result)["reported_receipt_kind"], "historical_linkfix_receipt")
 
+    def test_prepare_returns_canonical_candidate_path(self):
+        # Existing lexical aliases must return the same path as inspect.
+        (self.base / "existing parent").mkdir()
+        result = self.prepare(label="existing parent/../canonical output")
+        self.assertEqual(result["candidate_path"], str((self.base / "canonical output/candidate.json").resolve()))
+        self.assertEqual(self.check_saved(result), result)
+
+    def test_output_reparse_parent_rejected_before_creation(self):
+        expected = self.write(self.document())
+        original_lstat = Path.lstat
+
+        def reparse_parent(path, *args, **kwargs):
+            if path == self.base:
+                from types import SimpleNamespace
+                return SimpleNamespace(st_file_attributes=0x400, st_mode=original_lstat(path).st_mode)
+            return original_lstat(path, *args, **kwargs)
+
+        with patch.object(Path, "lstat", reparse_parent):
+            with self.assertRaisesRegex(ValueError, "output parent"):
+                candidate.prepare(self.manifest, expected, self.base / "blocked", **self.paths)
+        self.assertFalse((self.base / "blocked").exists())
+
     def test_wrong_receipt_shapes(self):
         for mutation in (lambda d: d.pop("prepared_sha256"), lambda d: d.update(exit=0),
                          lambda d: d.update(unknown=True)):

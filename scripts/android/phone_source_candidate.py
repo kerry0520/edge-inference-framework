@@ -153,6 +153,7 @@ def prepare(manifest, expected_sha256, output, binary=None, library=None, worker
     with target.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
+    target = plain(str(target))
     return {"candidate_path": str(target), "candidate_sha256": sha(target), **result}
 
 
