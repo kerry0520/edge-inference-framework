@@ -1,0 +1,17 @@
+{
+  "accepted": true,
+  "native_sessions": 1,
+  "successful_requests": 5,
+  "matched_successful_requests": 5,
+  "budget_rejections": 1,
+  "new_commands": 1,
+  "chunks": 40,
+  "full": 45,
+  "trunk": 8,
+  "decode_included_in_full": 40,
+  "actual_forwards": 53,
+  "rejection_four_field_snapshot_unchanged": true,
+  "new_clears_history_retains_plan_and_stats": true,
+  "scope": "fixed fresh82b lifecycle compared to old2cc raw sequences, not logits/performance or other devices",
+  "raw_or_assets_published": false
+}

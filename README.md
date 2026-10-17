@@ -119,3 +119,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 新增[新程序与源码的对应关系](docs/Android新程序如何证明来自源码-20261016.md)，见[新构建到手机的范围](evidence/fresh-candidate-20261016/README.md)。
 
 新增[受审程序到聊天入口](docs/Android受审程序怎样进入聊天入口-20261017.md)，[交付范围](evidence/fresh-runtime-delivery-20261017/README.md)。
+
+新增[多轮输入与拒绝后的状态](docs/Android多轮输入与拒绝后的状态-20261017.md)，[限定验收范围](evidence/fresh-lifecycle-20261017/README.md)。

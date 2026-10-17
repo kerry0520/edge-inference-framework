@@ -143,3 +143,5 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 ```
 
 需要当前手机ADB可用。新包只含程序与小型身份文件，使用手机现有模型；旧两种profile仍支持。`export-fresh`只接受本次明确受审的五份记录和固定资产，不接受任意candidate或自签accepted字段；公开仓库不分发实际包或模型，其他新构建需要独立审查。职责、验证结果和范围见[受审程序到聊天入口](Android受审程序怎样进入聊天入口-20261017.md)。
+
+fresh新包现已补齐同进程多轮、原生预算拒绝后继续、new及短长切换回归，五题与旧包同配置生成轨迹一致。验证驱动仍是`phone_acceptance.py`，传入上述fresh profile即可；默认只生成离线计划，加--run才会运行。每次使用新output目录，不重放未知结果。日常提问仍用phone_chat.py；[本轮应理解的输入与会话状态](Android多轮输入与拒绝后的状态-20261017.md)。
