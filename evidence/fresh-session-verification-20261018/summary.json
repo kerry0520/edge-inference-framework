@@ -1,0 +1,65 @@
+{
+  "kind": "derived_historical_evidence_review_not_device_run",
+  "source_sha256": "66eedfb4493b54cdc8172067217562a9072bded722e7c8aaf9992dd760e7bc21",
+  "test_sha256": "33a5171ec9ab515567f2d8215316c4dd33e3b4491bfd36fea4d4943965f90876",
+  "unit_tests": 11,
+  "public_test_actual_exit": 0,
+  "cases": [
+    {
+      "name": "legacy-plan-cli",
+      "profile_id": "mi11-qwen3-06b-plan-v1",
+      "historical_requests": 1,
+      "old_reader_actual_exit": 0,
+      "new_reader_actual_exit": 0,
+      "new_actual_forwards": 18
+    },
+    {
+      "name": "source-plan-guarded-cli",
+      "profile_id": "mi11-qwen3-06b-source-plan-v1",
+      "historical_requests": 3,
+      "old_reader_actual_exit": 0,
+      "new_reader_actual_exit": 0,
+      "new_actual_forwards": 31
+    },
+    {
+      "name": "fresh-multirequest-cli",
+      "profile_id": "mi11-qwen3-06b-fresh-plan-v1",
+      "historical_requests": 3,
+      "old_reader_actual_exit": 1,
+      "new_reader_actual_exit": 0,
+      "new_actual_forwards": 21
+    },
+    {
+      "name": "fresh-portable-package-cli",
+      "profile_id": "mi11-qwen3-06b-fresh-plan-v1",
+      "historical_requests": 1,
+      "old_reader_actual_exit": 1,
+      "new_reader_actual_exit": 0,
+      "new_actual_forwards": 5
+    }
+  ],
+  "negative_cases": [
+    {
+      "name": "unknown-binary",
+      "actual_exit": 1,
+      "accepted": false
+    },
+    {
+      "name": "mismatched-profile",
+      "actual_exit": 1,
+      "accepted": false
+    },
+    {
+      "name": "native-exit-bool",
+      "actual_exit": 1,
+      "accepted": false
+    }
+  ],
+  "originals_unchanged": true,
+  "device_commands": 0,
+  "model_requests": 0,
+  "native_commands": 0,
+  "legacy_adapter": "explicit derived adapter binding original raw CLI exit-code and approved CLI command; not an API collector receipt",
+  "source_cli": "runpy guarded real CLI with SystemExit propagated",
+  "scope": "Known full-plan historical evidence consistency; not independent truth, new model correctness or performance, or candidate admission"
+}

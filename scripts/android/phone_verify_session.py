@@ -8,9 +8,11 @@ import re
 
 MODEL = '/data/local/tmp/MNN/Qwen3-0.6B-MNN-modelscope/'
 MODEL_NAMES = ('llm.mnn', 'llm.mnn.weight', 'llm_config.json', 'tokenizer.txt', 'tokenizer-android-lf.txt')
+# Keep this offline reader stdlib-only; tests pin all entries to phone_plan_profile.
 KNOWN_BINARIES = {
     'mi11-qwen3-06b-plan-v1': 'ee5ed8d620e00550ada713d3ffce25354c763bda5d34a23897c40315dc2894b5',
     'mi11-qwen3-06b-source-plan-v1': '2cc76982280e6607fdbef1e37c9de0511a9f898efd43133de6268380093dd959',
+    'mi11-qwen3-06b-fresh-plan-v1': '82b18102e3e07911f4febcbca6426a4b19db630421f93cf809c0b5daf4f85772',
 }
 SCOPE = 'known full-plan binary records; evidence consistency only, not independent device proof, mathematical correctness, baseline equivalence, or current device state'
 

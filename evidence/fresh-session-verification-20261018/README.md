@@ -1,0 +1,9 @@
+# 已登记fresh程序的统一离线会话验收
+
+检查器原先只认识两版固定程序，遗漏了已经正式登记的fresh82b。本次补该固定身份，测试约束身份表与profile注册一致，三身份匹配接受、交叉错配及未知继续拒绝；不新增任意候选参数或运行时白名单。
+
+四组历史真实CLI原件做旧新reader离线对照：ee5与2cc保持通过；fresh三轮和搬移包单题由unknown误拒变为通过。三类损坏副本继续拒绝。请求/forward数量见summary，全部是既有模型运行，不是本轮新增手机请求。
+
+ee5旧格式只有原始CLI退出码文件，适配receipt显式标注派生并固定原始退出码与原CLI命令SHA；source记录来自runpy guarded真实CLI且SystemExit透传。没有把API collector退出当正式CLI退出。原件前后哈希未变；其中fresh多请求含计划命中、new与长输入，单题不触发trunk。
+
+本页只公开代码与派生结论；原始日志、适配来源和失败重放保存在作者本地results/android/fresh-session-verification-20261018。reader通过只证明记录内部一致，不认证第三方原始设备事实，也不表示当前设备在线。没有新模型、完整logits或性能结论；未知新构建仍需自己的审查和登记。

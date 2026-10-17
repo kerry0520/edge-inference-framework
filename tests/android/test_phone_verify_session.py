@@ -124,7 +124,42 @@ class VerifyTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('plan_profile', Path(__file__).resolve().parents[2] / 'scripts/android/phone_plan_profile.py')
         profile = importlib.util.module_from_spec(spec); spec.loader.exec_module(profile)
         self.assertEqual(v.KNOWN_BINARIES, {profile.PROFILE_ID: profile.IDENTITY['binary_sha256'],
-                                          profile.SOURCE_PROFILE_ID: profile.SOURCE_IDENTITY['binary_sha256']})
+                                          profile.SOURCE_PROFILE_ID: profile.SOURCE_IDENTITY['binary_sha256'],
+                                          profile.FRESH_PROFILE_ID: profile.FRESH_IDENTITY['binary_sha256']})
+
+    def test_each_registered_profile_identity_is_accepted(self):
+        expected = {
+            'mi11-qwen3-06b-plan-v1': 'ee5ed8d620e00550ada713d3ffce25354c763bda5d34a23897c40315dc2894b5',
+            'mi11-qwen3-06b-source-plan-v1': '2cc76982280e6607fdbef1e37c9de0511a9f898efd43133de6268380093dd959',
+            'mi11-qwen3-06b-fresh-plan-v1': '82b18102e3e07911f4febcbca6426a4b19db630421f93cf809c0b5daf4f85772',
+        }
+        for profile_id, binary in expected.items():
+            with self.subTest(profile_id=profile_id):
+                s, out, cli = fixture()
+                s['build']['binary_sha256'] = s['binary_deployed']['sha256'] = binary
+                s['runtime_profile'] = {'profile_id': profile_id, 'binary_sha256': binary}
+                self.assertTrue(v.verify(s, out, cli)['accepted'])
+
+    def test_profile_and_binary_mismatch_or_unknown_are_rejected(self):
+        known = tuple(v.KNOWN_BINARIES.items())
+        for profile_id, binary in known:
+            changes = [('unknown-profile', binary), (profile_id, 'b' * 64)]
+            changes += [(other_id, binary) for other_id, _ in known if other_id != profile_id]
+            for claimed_profile, claimed_binary in changes:
+                with self.subTest(binary=binary, profile=claimed_profile, claimed_binary=claimed_binary):
+                    s, out, cli = fixture()
+                    s['build']['binary_sha256'] = s['binary_deployed']['sha256'] = binary
+                    s['runtime_profile'] = {'profile_id': claimed_profile, 'binary_sha256': claimed_binary}
+                    with self.assertRaisesRegex(ValueError, 'runtime profile identity'):
+                        v.verify(s, out, cli)
+        for profile_id in (None, 'mi11-qwen3-06b-fresh-plan-v1'):
+            with self.subTest(unknown_binary_profile=profile_id):
+                s, out, cli = fixture()
+                s['build']['binary_sha256'] = s['binary_deployed']['sha256'] = 'b' * 64
+                if profile_id is not None:
+                    s['runtime_profile'] = {'profile_id': profile_id, 'binary_sha256': 'b' * 64}
+                with self.assertRaisesRegex(ValueError, 'unknown full-plan binary'):
+                    v.verify(s, out, cli)
 
     def test_cli_exit_and_duplicate_stdout_rejected(self):
         s, out, cli = fixture()

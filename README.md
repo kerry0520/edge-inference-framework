@@ -42,7 +42,9 @@
 
 [开发与验收路线](docs/公开仓库开发与验收路线-20261017.md)区分源码构建、待验候选、设备对照和正式包登记。固定两题参考现已公开，不包含权重或程序；设备链仍限定硬件身份，新构建不自动准入。
 
-GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试，显式启用UTF-8并使用runner临时目录。当前本机公开目录为272条执行、267个不同test ID，271通过、1条因真实symlink权限跳过；5条是导入基类的重复发现。测试使用fixture/mock，不需要手机或NDK，不代表真机或性能验收。远端状态见[Actions](https://github.com/kerry0520/edge-inference-framework/actions/workflows/android-offline.yml)。
+GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试，显式启用UTF-8并使用runner临时目录。执行数量、跳过项和结果以对应提交的Actions原始报告为准；导入基类会重复发现5条用例，执行条数不代表独立用例数。测试使用fixture/mock，不需要手机或NDK，不代表真机或性能验收。远端状态见[Actions](https://github.com/kerry0520/edge-inference-framework/actions/workflows/android-offline.yml)。
+
+已登记的ee5/2cc/fresh82b均可使用同一离线会话检查器。四组历史CLI记录重放和坏记录拒绝见[本轮摘要](evidence/fresh-session-verification-20261018/README.md)，计数和执行主线见[会话验收](docs/当前运行包的会话验收与执行路径-20261018.md)。重读原件不算新的手机运行或性能结果。
 
 ## 运行与复现范围
 
