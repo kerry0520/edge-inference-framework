@@ -12,5 +12,5 @@
   "runner_exit": 0,
   "production_admitted": false,
   "scope": "known existing binary, pending candidate adapter, three deterministic generations; no new build, logits, stable performance, or other devices",
-  "public_scope": "derived counts only; no candidate/reference/receipts/raw device logs or large assets"
+  "public_scope": "derived counts plus separately published fixed two-prompt reference fixture; no candidate/build receipts/raw device logs or large assets; fixed hardware restriction unchanged"
 }

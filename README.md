@@ -38,6 +38,12 @@
 
 19项离线测试通过；已有fresh资产真实导出并搬到中文空格路径后，在固定手机上完成1次4-token正式CLI请求，完整签名匹配参考、退出清理与使用后检查通过。短输入未触发主干计划命中，不新增回答质量、优化正确性或性能承诺；也不是新电脑从零复现。见[派生验收摘要](evidence/client-bundle-20261017/README.md)。
 
+## 公开开发与自动回归
+
+[开发与验收路线](docs/公开仓库开发与验收路线-20261017.md)区分源码构建、待验候选、设备对照和正式包登记。固定两题参考现已公开，不包含权重或程序；设备链仍限定硬件身份，新构建不自动准入。
+
+GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试。当前本机公开目录为272条执行、267个不同test ID，271通过、1条因真实symlink权限跳过；5条是导入基类的重复发现。测试使用fixture/mock，不需要手机或NDK，不代表真机或性能验收。远端状态见[Actions](https://github.com/kerry0520/edge-inference-framework/actions/workflows/android-offline.yml)。
+
 ## 运行与复现范围
 
 本仓库提供代码和阶段说明，**不包含模型权重、NDK/ADB、MNN 编译产物或手机缓存**。
