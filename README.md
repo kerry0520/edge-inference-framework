@@ -52,6 +52,8 @@ GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试，显�
 
 开发者现可使用[显式候选试用入口](docs/从新构建到候选试用-20261018.md)：默认离线重算，`--run`才连接手机，正式profile保持。已补[真实手机单题与交互回归](evidence/candidate-trial-device-20261018/README.md)，覆盖连续提问、new和预算拒绝后继续；限定当前设备与模型，候选仍待正式准入。
 
+公开开发流程补上[验证CLI采集入口](docs/从公开源码生成新的手机程序-20261018.md)，将原验证器的真实退出码和日志交给既有seal/replay；默认只计划，`--run`才执行。当前[证据范围](evidence/public-validation-collector-20261018/README.md)区分离线测试、源码准备与尚在进行的构建。
+
 ## 运行与复现范围
 
 本仓库提供代码和阶段说明，**不包含模型权重、NDK/ADB、MNN 编译产物或手机缓存**。

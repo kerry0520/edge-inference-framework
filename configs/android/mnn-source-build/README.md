@@ -65,3 +65,7 @@ python scripts/android/phone_plan_profile.py export-fresh --source-build "result
 输出目录必须不存在。入口核五份固定证据、实际程序/库/源码与实编快照，导出前后输入一致才写profile；失败保留目录但无可选profile。可用--records-root和--artifact-map搬移这些固定输入，不能改变身份。包不含模型、静态库、工具链或ADB，导出后解析只读包内文件。
 
 此命令仅适用于已明确纳入的82b18102程序与受审记录，实际记录和资产不随公开仓库分发；不能把任意新编产物或candidate.json直接填入获得正式资格。旧export/export-source与原profile保持。说明见[受审程序怎样进入聊天入口](../../../docs/Android受审程序怎样进入聊天入口-20261017.md)。
+
+## 新候选的公开设备采集
+
+新产物完成候选绑定与构建审查后，可用`phone_candidate_validation_collect.py`保存原验证CLI的真实退出码和实时日志，接上已有设备seal/replay及显式候选试用。默认只离线计划，`--run`才运行，采集器自身退出0后才能封装；候选仍pending，不修改正式profile。连续职责和命令见[公开源码到新程序](../../../docs/从公开源码生成新的手机程序-20261018.md)。该链仍限定当前手机与参考，完整编译或同机新目录不代表另一台电脑已验。

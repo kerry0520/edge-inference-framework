@@ -1,0 +1,20 @@
+{
+  "kind": "derived_collector_summary_not_device_receipt",
+  "source_sha256": {
+    "scripts/android/phone_candidate_validation_collect.py": "849cbf98ccb4930565fa446b686033e947332b20b2767570f672d9bf671032b8",
+    "tests/android/test_phone_candidate_validation_collect.py": "f6872cfec9e4a16709ae31dda08710ab83b3bb0748bdcda45a3a9c3647261401"
+  },
+  "fixture_tests": 23,
+  "fixture_skip": 0,
+  "public_fixture_actual_exit": 0,
+  "real_default_cli_actual_exit": 0,
+  "real_default_process_attempts": 0,
+  "real_default_child_command_created": false,
+  "run_branch_device_verification": "pending for this collector",
+  "build_reproduction": "clean public local clone and prepare succeeded; first configure failed writing compiler probe, second new output attempt still in progress at publication",
+  "default_model_requests": 0,
+  "production_admitted": false,
+  "candidate_status": "candidate_pending",
+  "scope": "Parent CLI capture gap only; existing validator/seal/profiles unchanged; not new-PC, new build success or new device proof.",
+  "seal_precondition": "Collector parent actual exit0 and postchecks required, not just the child actual_exit field."
+}
