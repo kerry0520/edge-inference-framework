@@ -50,7 +50,7 @@ GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试，显�
 
 候选设备验证现提供[原件绑定与离线重算](docs/候选设备原件与离线重算-20261018.md)：核对被测程序、输入、输出和进程身份；[派生结果](evidence/device-validation-replay-20261018/README.md)区分历史验证与当前重算。正式身份限制保持。
 
-开发者现可使用[显式候选试用入口](docs/从新构建到候选试用-20261018.md)：默认离线重算，`--run`才连接手机，正式profile保持。当前[验证范围](evidence/candidate-trial-20261018/README.md)是实际离线预检与运行分支fixture，新的实机试用待完成。
+开发者现可使用[显式候选试用入口](docs/从新构建到候选试用-20261018.md)：默认离线重算，`--run`才连接手机，正式profile保持。已补[真实手机单题与交互回归](evidence/candidate-trial-device-20261018/README.md)，覆盖连续提问、new和预算拒绝后继续；限定当前设备与模型，候选仍待正式准入。
 
 ## 运行与复现范围
 
