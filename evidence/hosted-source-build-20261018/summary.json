@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "public_source_commit": "613c3f3a58d5aafe3487324cbdf30776fc9ff353",
+  "run_id": 39135379364,
+  "job_id": 117698721196,
+  "run_url": "https://github.com/kerry0520/edge-inference-framework/actions/runs/39135379364",
+  "run_conclusion": "success",
+  "job_conclusion": "success",
+  "hosted_summary_count": 1,
+  "steps": [
+    {
+      "step": "version-cmake",
+      "actual_exit": 0
+    },
+    {
+      "step": "version-ninja",
+      "actual_exit": 0
+    },
+    {
+      "step": "version-clang",
+      "actual_exit": 0
+    },
+    {
+      "step": "version-llvm-ar",
+      "actual_exit": 0
+    },
+    {
+      "step": "version-llvm-readelf",
+      "actual_exit": 0
+    },
+    {
+      "step": "git-init",
+      "actual_exit": 0
+    },
+    {
+      "step": "git-remote",
+      "actual_exit": 0
+    },
+    {
+      "step": "git-fetch",
+      "actual_exit": 0
+    },
+    {
+      "step": "git-identity",
+      "actual_exit": 0
+    },
+    {
+      "step": "prepare",
+      "actual_exit": 0
+    },
+    {
+      "step": "build",
+      "actual_exit": 0
+    },
+    {
+      "step": "candidate",
+      "actual_exit": 0
+    },
+    {
+      "step": "audit",
+      "actual_exit": 0
+    }
+  ],
+  "source_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2",
+  "tool_combination": "Official Kitware CMake 4.1.1; distinct from the previously validated Microsoft 4.1.1-msvc1 combination",
+  "candidate_status": "candidate_pending",
+  "production_admitted": false,
+  "runtime_validation": "pending",
+  "device_commands": 0,
+  "model_requests": 0,
+  "artifacts_uploaded": false,
+  "manifest_sha256": "92c3e4803e851c9f7368f6581a0968ed4c470a3f202d40f94db1eea2b918d644",
+  "runner_sha256": "8f0c189eb9fc0c2dd357a39d3141e59e9d8e1e09246a35ef089ffc9ad9823dfb",
+  "tools": {
+    "cmake": {
+      "sha256": "e483af94f7cae88c93c8c6372b4444618b8367fa82f2ebee7e03e6c860681050",
+      "version": "cmake version 4.1.1"
+    },
+    "ninja": {
+      "sha256": "68865c3276d449d746cea5065fdec2baf755d7813e161ab04205b0907b2629b8",
+      "version": "1.12.1"
+    },
+    "clang": {
+      "sha256": "6b7a698ccd1d5ef7375b7733f0675a166c560112961d3e5df0f275565a9201bc",
+      "version": "Android (16134705, based on r574158c) clang version 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 9f872551d3c681d06fd303b36f16ed5c274735eb)"
+    },
+    "llvm-ar": {
+      "sha256": "9234e6efbaf6a43da39f7febab3013be141d3e428be083ad7584c2df922e621e",
+      "version": "LLVM (http://llvm.org/):"
+    },
+    "llvm-readelf": {
+      "sha256": "1db5adc13b69502b1f76406014943ef2d326aedeee3397b228d0e66347ab1c63",
+      "version": "LLVM (http://llvm.org/):"
+    }
+  },
+  "compilation_performed": true,
+  "worker_sha256": "00fae79e3319dd2e3762fe35a18ccd12b42586c7d4d7eb2cdd54a82d57d906eb",
+  "library_sha256": "ddf4be0897ce29ae09f2ffc8ee34a570b87d997d9202a0103b188e2fda65c790",
+  "recipe_actual_exits": {
+    "configure": 0,
+    "compile": 0,
+    "link": 0,
+    "archive-members": 0
+  },
+  "actual_object_count": 565,
+  "archive_member_count": 565,
+  "actual_kleidi_object_count": 101,
+  "elf_needed": [
+    "liblog.so",
+    "libandroid.so",
+    "libm.so",
+    "libdl.so",
+    "libc.so"
+  ],
+  "auditor_native_commands": 4,
+  "scope": {
+    "independent_host": "GitHub hosted Windows VM",
+    "full_inner_records_persisted": false,
+    "independent_artifact_replay_performed": false,
+    "hosted_artifact_phone_validation": false,
+    "performance_claim": false,
+    "offline_ci": {
+      "run_id": 39122327042,
+      "source_commit": "613c3f3a58d5aafe3487324cbdf30776fc9ff353",
+      "platforms": [
+        "windows-latest",
+        "ubuntu-latest"
+      ],
+      "executions_per_platform": 399,
+      "unique_test_ids_per_platform": 394,
+      "skips_per_platform": 0,
+      "hosted_test_executions_per_platform": 15
+    }
+  }
+}

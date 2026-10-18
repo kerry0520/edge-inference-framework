@@ -59,7 +59,7 @@ python scripts/android/build_mnn_source.py prepare-retry --prepared "原记录�
 ## 导出本轮明确受审的新构建
 
 ```powershell
-python scripts/android/phone_plan_profile.py export-fresh --source-build "待替换：已受审且本地存在的build.json" --output "新的运行包目录"
+python scripts/android/phone_plan_profile.py export-fresh --source-build "已受审构建记录目录/build.json" --output "新的运行包目录"
 ```
 
 输出目录必须不存在。入口核五份固定证据、实际程序/库/源码与实编快照，导出前后输入一致才写profile；失败保留目录但无可选profile。可用--records-root和--artifact-map搬移这些固定输入，不能改变身份。包不含模型、静态库、工具链或ADB，导出后解析只读包内文件。
@@ -72,7 +72,7 @@ python scripts/android/phone_plan_profile.py export-fresh --source-build "待替
 
 ## 独立托管Windows构建入口
 
-新增手动工作流`.github/workflows/android-source-build.yml`，在独立GitHub托管Windows虚拟机中准备公开依赖，再调用上述原prepare/build、候选绑定和构建审查。它不是Python离线回归的另一个名字，会实际编译MNN和Android ARM64 worker；截至本段初稿只完成入口与离线测试，实际远端构建待运行。
+新增手动工作流`.github/workflows/android-source-build.yml`，在独立GitHub托管Windows虚拟机中准备公开依赖，再调用上述原prepare/build、候选绑定和构建审查。它不是Python离线回归的另一个名字，会实际编译MNN和Android ARM64 worker；已在独立GitHub托管Windows虚拟机完成一次真实完整构建与审查，见[原始公开运行](https://github.com/kerry0520/edge-inference-framework/actions/runs/39135379364)（源码提交613c3f3）。
 
 公开仓库的Actions页选择`Manual Android source build`再选择`Run workflow`。它只手动触发，不因每次push反复下载与编译；不复用构建cache，不上传程序、静态库、模型或原始本机资料。构建和检查的退出状态、对象数量、工具信息及程序摘要以`HOSTED_BUILD_SUMMARY`写入公开工作流日志；完整临时记录随runner回收，失败只保留日志中限量的本次错误尾部，不能称完整原件都已持久保存。
 

@@ -152,4 +152,4 @@ python scripts/android/phone_chat.py --mode full --stats --prefill-plan-cache --
 
 新编候选还完成了连续追问、预算拒绝后继续与清空历史；见[消息与计算状态](docs/Android多轮输入与拒绝后的状态-20261017.md)和[限定验收](evidence/new-candidate-state-20261018/README.md)。本轮没有修改推理代码，也不新增提速结论。
 
-新增[独立托管 Windows 源码构建入口](configs/android/mnn-source-build/README.md)：手动准备公开依赖并完整编译新候选，区别于 Python 离线回归；截至本次发布尚未运行远端构建，结果仍待验。新工具组合明确记录，不上传模型或原生产物，不自动加入正式 profile。
+新增[独立托管 Windows 源码构建入口](configs/android/mnn-source-build/README.md)，已在独立GitHub Windows虚拟机从公开依赖完整构建并通过产物检查；见[实际运行](https://github.com/kerry0520/edge-inference-framework/actions/runs/39135379364)及[限定结果](evidence/hosted-source-build-20261018/README.md)。这与Python离线回归分别验证；云端新程序仍pending、未运行手机，不上传程序/库/模型，也不自动加入正式profile。
