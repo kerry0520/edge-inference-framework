@@ -185,6 +185,8 @@ def main(argv=None):
     output = None
     try:
         require(1 <= args.max_new_tokens <= 512, 'max-new-tokens must be 1..512')
+        require(args.prompt is None or (bool(args.prompt.strip()) and '\x00' not in args.prompt),
+                'prompt must be nonempty and contain no NUL')
         check = preflight(args)
         output = Path(check['output'])
         if not args.run:

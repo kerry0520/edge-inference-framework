@@ -228,6 +228,14 @@ class TrialTests(unittest.TestCase):
             self.assertEqual(chat.main(self.cli('--run')), 1)
         self.assertTrue((Path(self.args.output) / 'error.json').is_file())
 
+    def test_invalid_explicit_prompt_rejected_before_preflight(self):
+        for prompt in ('', ' \t\n', 'a\x00b'):
+            with self.subTest(prompt=repr(prompt)), patch.object(chat, 'preflight') as preflight, patch.object(chat, 'ReviewedCandidateSession') as session:
+                self.assertEqual(chat.main(self.cli('--run', '--prompt', prompt)), 1)
+                preflight.assert_not_called()
+                session.assert_not_called()
+                self.assertFalse(Path(self.args.output).exists())
+
     def test_run_factory_preserves_arguments_and_cleanup(self):
         class Fake:
             record = {}

@@ -1,10 +1,10 @@
 {
   "kind": "derived_summary_not_trial_receipt",
   "source_sha256": {
-    "scripts/android/phone_candidate_chat.py": "ed02e481c26071bdea14e8e02a2aa1d90d584de12b210658878764ddbc6af9c9",
-    "tests/android/test_phone_candidate_chat.py": "6c21664779310b34e59f5a67306c151964cd1978e6e0f30897408299ac85a894"
+    "scripts/android/phone_candidate_chat.py": "848dc502d8840424a5fdd494860e13614aac2b2d1da31bb917ac0f3875c8994a",
+    "tests/android/test_phone_candidate_chat.py": "221dd5281a19ca985e8e21120ebdf84523b4a300f17b90ddb5da44338b955e64"
   },
-  "fixture_tests": 32,
+  "fixture_tests": 33,
   "formal_gate_tests": 11,
   "public_targeted_test_exits": [
     0,
@@ -36,5 +36,14 @@
   "production_admitted": false,
   "formal_profile_changed": false,
   "runtime_device_validation": "pending; phone not available for current trial",
-  "scope": "Default pure Python evidence replay and identity closure verified using real historical inputs; new trial runtime only covered by fixtures. Not new model/performance/device acceptance."
+  "scope": "Default pure Python evidence replay and identity closure verified using real historical inputs; new trial runtime only covered by fixtures. Not new model/performance/device acceptance.",
+  "latest_public_trial_test_exit": 0,
+  "real_preflight_source_sha256": "ed02e481c26071bdea14e8e02a2aa1d90d584de12b210658878764ddbc6af9c9",
+  "version_note": "Real dual-root preflight ran prior version ed02. Final848d only adds a main() prompt guard; AST comparison confirms preflight/session core unchanged. No repeated full replay.",
+  "invalid_prompt_actual_cli_exits": [
+    1,
+    1
+  ],
+  "invalid_prompt_process_attempts": 0,
+  "nul_guard_scope": "in-process fixture; OS argv cannot contain NUL"
 }
