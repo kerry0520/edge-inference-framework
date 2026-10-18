@@ -1,0 +1,40 @@
+{
+  "kind": "derived_summary_not_trial_receipt",
+  "source_sha256": {
+    "scripts/android/phone_candidate_chat.py": "ed02e481c26071bdea14e8e02a2aa1d90d584de12b210658878764ddbc6af9c9",
+    "tests/android/test_phone_candidate_chat.py": "6c21664779310b34e59f5a67306c151964cd1978e6e0f30897408299ac85a894"
+  },
+  "fixture_tests": 32,
+  "formal_gate_tests": 11,
+  "public_targeted_test_exits": [
+    0,
+    0
+  ],
+  "real_preflight_cases": [
+    {
+      "case": "fresh",
+      "actual_exit": 0,
+      "process_attempts": 0
+    },
+    {
+      "case": "wrong-build-pin",
+      "actual_exit": 1,
+      "process_attempts": 0
+    },
+    {
+      "case": "cross-candidate",
+      "actual_exit": 1,
+      "process_attempts": 0
+    }
+  ],
+  "pinned_inputs_unchanged": true,
+  "default_session_constructions": 0,
+  "default_process_attempts": 0,
+  "current_device_commands_by_trial": 0,
+  "current_model_requests": 0,
+  "candidate_status": "candidate_pending",
+  "production_admitted": false,
+  "formal_profile_changed": false,
+  "runtime_device_validation": "pending; phone not available for current trial",
+  "scope": "Default pure Python evidence replay and identity closure verified using real historical inputs; new trial runtime only covered by fixtures. Not new model/performance/device acceptance."
+}
