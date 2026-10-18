@@ -1,0 +1,52 @@
+{
+  "kind": "derived_public_build_reproduction_summary_not_raw_receipt",
+  "scope": "Same host clean public local clone with explicit existing tools/dependencies; fixed Mi11/Qwen3-0.6B CPU only.",
+  "new_build": {
+    "configure_actual_exit": 0,
+    "compile_actual_exit": 0,
+    "link_actual_exit": 0,
+    "archive_actual_exit": 0,
+    "compiled_objects": 565,
+    "archive_members": 565,
+    "kleidiai_objects": 101,
+    "old_objects_or_library_reused": false,
+    "worker_sha256": "94deb9582c9134f53d0e05765c253f3e2083c2959ce9d48674c75a10c00372c2",
+    "library_sha256": "43e9868fd61915fe17f8ee3b7641ad6e0a6a7c70a969dc503b51e33fdddeaec5"
+  },
+  "device_validation": {
+    "outer_collector_actual_exit": 0,
+    "validator_actual_exit": 0,
+    "fixed_requests": 3,
+    "signature_match": true,
+    "seal_actual_exit": 0,
+    "offline_replay_actual_exit": 0
+  },
+  "new_candidate_trial": {
+    "actual_cli_exit": 0,
+    "successful_requests": 1,
+    "confirmed_output": "你好！我是AI助手，随时为您提供帮助。",
+    "input_tokens": 19,
+    "output_tokens_including_eos": 11,
+    "decode_steps": 10,
+    "native_exit": 0,
+    "worker_and_owned_forward_cleanup_confirmed": true,
+    "model_hashes_before_after_equal": true,
+    "model_file_count": 5,
+    "source_and_input_bytes_unchanged": true
+  },
+  "candidate_status": "candidate_pending",
+  "production_admitted": false,
+  "accepted": false,
+  "retained_failures": [
+    "Initial host configure object-write failure preserved; retry used a fresh object directory.",
+    "Two pre-trial ADB attempts failed without sending a question; later discovery/identity verification enabled the single successful trial."
+  ],
+  "not_claimed": [
+    "new physical computer reproduction",
+    "other devices/models or GPU/NPU",
+    "new performance improvement",
+    "full numerical equivalence or answer-quality assessment for the new worker",
+    "formal profile admission"
+  ],
+  "publication": "Docs and derived summary only; raw paths, receipts, device logs, toolchains, binaries and model assets remain local."
+}

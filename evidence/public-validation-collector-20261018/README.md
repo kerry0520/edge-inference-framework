@@ -5,3 +5,5 @@
 23项fixture通过、0skip，含本机短Python孩子的非零退出和实时日志，未运行模型。真实已有候选的默认CLI在进程启动审计钩子下0尝试、无run/childcommand；钩子不是OS沙箱。原验证器、seal协议、正式profile均保持。
 
 同时开展干净公开本地clone的新输出构建，prepare成功但首次configure对象写入Permission denied；新输出重试尚在进行，未将prepare称编译/手机成功，更不称物理新电脑验证。这里只发布代码、合成测试、学习说明与派生摘要，原路径/日志/回执/模型/程序不公开。
+
+后续更新：上述“构建仍在进行”是当时快照；现已完成新空目录全量构建、公开采集器三题、封装/重算和新候选聊天，见[后续精简验收](../public-build-reproduction-20261018/README.md)。旧失败记录保留，候选仍pending。
