@@ -59,7 +59,7 @@ python scripts/android/build_mnn_source.py prepare-retry --prepared "原记录�
 ## 导出本轮明确受审的新构建
 
 ```powershell
-python scripts/android/phone_plan_profile.py export-fresh --source-build "results/android/fresh-candidate-acceptance-20261016/build-v3/build.json" --output "新的运行包目录"
+python scripts/android/phone_plan_profile.py export-fresh --source-build "待替换：已受审且本地存在的build.json" --output "新的运行包目录"
 ```
 
 输出目录必须不存在。入口核五份固定证据、实际程序/库/源码与实编快照，导出前后输入一致才写profile；失败保留目录但无可选profile。可用--records-root和--artifact-map搬移这些固定输入，不能改变身份。包不含模型、静态库、工具链或ADB，导出后解析只读包内文件。
@@ -69,3 +69,23 @@ python scripts/android/phone_plan_profile.py export-fresh --source-build "result
 ## 新候选的公开设备采集
 
 新产物完成候选绑定与构建审查后，可用`phone_candidate_validation_collect.py`保存原验证CLI的真实退出码和实时日志，接上已有设备seal/replay及显式候选试用。默认只离线计划，`--run`才运行，采集器自身退出0后才能封装；候选仍pending，不修改正式profile。连续职责和命令见[公开源码到新程序](../../../docs/从公开源码生成新的手机程序-20261018.md)。该链仍限定当前手机与参考，完整编译或同机新目录不代表另一台电脑已验。
+
+## 独立托管Windows构建入口
+
+新增手动工作流`.github/workflows/android-source-build.yml`，在独立GitHub托管Windows虚拟机中准备公开依赖，再调用上述原prepare/build、候选绑定和构建审查。它不是Python离线回归的另一个名字，会实际编译MNN和Android ARM64 worker；截至本段初稿只完成入口与离线测试，实际远端构建待运行。
+
+公开仓库的Actions页选择`Manual Android source build`再选择`Run workflow`。它只手动触发，不因每次push反复下载与编译；不复用构建cache，不上传程序、静态库、模型或原始本机资料。构建和检查的退出状态、对象数量、工具信息及程序摘要以`HOSTED_BUILD_SUMMARY`写入公开工作流日志；完整临时记录随runner回收，失败只保留日志中限量的本次错误尾部，不能称完整原件都已持久保存。
+
+依赖清单是`hosted-dependencies.json`，与历史`lock.json`分开：NDKr30精确revision保持；使用官方KitwareCMake4.1.1和Ninja1.12.1。这属于新的工具组合，CMake不是本机旧4.1.1-msvc1；原配方、补丁和历史锁未改。NDK校验来自Google官方包大小与SHA1，另记录下载后实测SHA256；CMakeSHA256来自官方发布清单；NinjaSHA256是从官方asset取得后测得的项目pin，不冒称官方签名。KleidiAI继续核现有锁的SHA256。
+
+只查看计划可运行：
+
+```powershell
+python -B scripts/android/hosted_source_build.py
+```
+
+默认不创建输出目录、不联网、不启动子进程。明确`--run --work-dir 全新ASCII无空格目录`才下载公开工具并完整构建，仅支持Windowsx86_64。依赖准备有网络请求；原构建配方不下载依赖，但本工作流没有系统级断网隔离。
+
+构建成功也保持`candidate_pending`、`runtime_validation: pending`：未连接手机、没有模型请求，不自动成为正式profile。独立宿主不等于另一部手机；路径和工具组合不同也可能产生不同二进制摘要。三类验证的关系见[源码、构建与设备](../../../docs/从公开源码生成新的手机程序-20261018.md)。
+
+依赖出处：[Google仓库清单](https://dl.google.com/android/repository/repository2-3.xml)、[Kitware校验清单](https://github.com/Kitware/CMake/releases/download/v4.1.1/cmake-4.1.1-SHA-256.txt)、[Ninja发布](https://github.com/ninja-build/ninja/releases/tag/v1.12.1)；托管虚拟机语义见[GitHub官方说明](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。

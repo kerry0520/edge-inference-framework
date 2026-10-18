@@ -1,0 +1,28 @@
+name: Manual Android source build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-build:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Fetch explicit dependencies and build a pending candidate
+        shell: pwsh
+        env:
+          PYTHONUTF8: '1'
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP ('source-build-' + [guid]::NewGuid().ToString('N'))
+          python -B scripts/android/hosted_source_build.py --run --work-dir $work
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "source_commit": "d407447ed56c4121a11ccbd266dc184ca1ead0c2",
+  "source_repository": "https://github.com/alibaba/MNN.git",
+  "host": "Windows x86_64",
+  "tool_combination": "Official Kitware CMake 4.1.1; distinct from the previously validated Microsoft 4.1.1-msvc1 combination",
+  "downloads": {
+    "ndk": {
+      "url": "https://dl.google.com/android/repository/android-ndk-r30-windows.zip",
+      "size": 727980788,
+      "algorithm": "sha1",
+      "digest": "9bf167a1985fa7d4a036186b78f702eab9179408",
+      "digest_source": "Google Android SDK repository manifest",
+      "directory": "android-ndk-r30",
+      "revision": "30.0.16248370"
+    },
+    "cmake": {
+      "url": "https://github.com/Kitware/CMake/releases/download/v4.1.1/cmake-4.1.1-windows-x86_64.zip",
+      "size": 48627947,
+      "algorithm": "sha256",
+      "digest": "6f531bd4ba31a7aa0c3511082b544d306df50e7aecfbeef8bdbc1dd770736993",
+      "digest_source": "Kitware v4.1.1 release SHA-256 manifest",
+      "directory": "cmake-4.1.1-windows-x86_64",
+      "version": "4.1.1"
+    },
+    "ninja": {
+      "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip",
+      "size": 275425,
+      "algorithm": "sha256",
+      "digest": "f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a",
+      "digest_source": "Locally measured official release asset; not an upstream signed checksum",
+      "directory": ".",
+      "version": "1.12.1",
+      "executable_sha256": "68865c3276d449d746cea5065fdec2baf755d7813e161ab04205b0907b2629b8"
+    },
+    "kleidiai": {
+      "url": "https://github.com/ARM-software/kleidiai/archive/refs/tags/v1.16.0.tar.gz",
+      "size": null,
+      "max_size": 20971520,
+      "algorithm": "sha256",
+      "digest": "57b0a95c559ec6a4b1460bc742af600bfb6cdff8dc39154b376c25347d7b0891",
+      "digest_source": "Existing production recipe lock"
+    }
+  }
+}
