@@ -81,6 +81,10 @@ class Session:
         self.record = {"session_id":self.id,"remote":self.remote,"requests":[],"status":"starting","independent_requests":False,"history_mode":"full_recompute","max_context_tokens":max_context_tokens,
                        "client_sha256":sha(__file__),"transfer_helper_sha256":sha(Path(__file__).with_name("phone_chat_transfer.py")),"cleanup_helper_sha256":sha(Path(__file__).with_name("phone_chat_cleanup.py"))}
 
+    def model_identity_for_session(self, adb):
+        """Default identity; isolated model candidates may override this hook."""
+        return model_identity(adb)
+
     def start(self):
         device = self.adb.select()
         if device["hardware_serial"]!="1e7c759e":
@@ -93,7 +97,7 @@ class Session:
         if sha(self.worker_source)!=build["source_sha256"]:
             raise RuntimeError("worker源码与build身份不匹配")
         self.record["build"]=build
-        self.record["model_before"]=model_identity(self.adb)
+        self.record["model_before"]=self.model_identity_for_session(self.adb)
         self.adb.shell("mkdir -p "+self.remote)
         self.record["binary_deployed"]=self.adb.push_verified(binary,self.remote+"/phone_chat_worker")
         self.adb.shell("chmod 755 "+self.remote+"/phone_chat_worker")
@@ -258,7 +262,7 @@ class Session:
         self.persist()
 
     def close(self):
-        return close_session(self, exchange, model_identity)
+        return close_session(self, exchange, self.model_identity_for_session)
 
 
 

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "model_id": "qwen3-1.7b-mnn",
+  "model_name": "Qwen3-1.7B",
+  "remote_directory": "/data/local/tmp/MNN/Qwen3-1.7B-MNN-cc0cae045f11",
+  "source": {
+    "repo": "MNN/Qwen3-1.7B-MNN",
+    "revision": "cc0cae045f11c525fba613066ce7c54da03ac4dd"
+  },
+  "files": {
+    "llm.mnn": {
+      "size": 461520,
+      "sha256": "a6352fda4a2063a73126d2b552e35603564545ae3ed9b1547f58736d00f880fc"
+    },
+    "llm.mnn.weight": {
+      "size": 1231860194,
+      "sha256": "d53dfdb7b826e4103e58a30236312978ff98ee89a2e1b9d66dd6bf227afce823"
+    },
+    "llm_config.json": {
+      "size": 4881,
+      "sha256": "dea06be377d9be7f6617fd421153032aee5ae75b16f53ebc3ef84417c5206aaf"
+    },
+    "tokenizer.txt": {
+      "size": 3193569,
+      "sha256": "77009625db0b18e74315dd89557c76feaab57e1d54e3240b442649a3c16ec4fb"
+    }
+  }
+}

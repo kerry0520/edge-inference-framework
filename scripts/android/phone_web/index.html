@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>端侧对话 · 手机上的模型</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main class="workspace">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="端侧对话首页"><span class="brand-mark">端</span>端侧对话</a>
+      <div class="intro"><p class="eyebrow">A SMALL MODEL, CLOSE TO YOU</p><h1>回答，<br>就在手机上。</h1><p>电脑负责呈现对话，手机上的模型负责思考与生成。</p></div>
+      <div class="model-card"><span class="model-icon">Q</span><div><strong id="model-name">手机模型</strong><span>Android 本地推理</span></div></div>
+      <p class="privacy">此页面仅连接这台电脑的本地服务。生成中请保持手机连接。</p>
+    </aside>
+    <section class="conversation" aria-label="模型聊天">
+      <header class="toolbar"><div><span class="eyebrow">PHONE CHAT</span><h2>一段新的灵感</h2></div><div class="toolbar-actions"><button id="refresh" class="button subtle" type="button">刷新状态</button><button id="new" class="button secondary" type="button" disabled>新对话</button></div></header>
+      <div class="status-strip"><span id="status-dot" class="status-dot"></span><span id="status" role="status" aria-live="polite">正在读取服务状态…</span><span class="local-label">本机连接</span></div>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <div id="messages" class="messages" role="log" aria-label="已确认的对话历史"></div>
+      <section id="pending" class="pending" aria-label="当前回答" hidden><div id="pending-label" class="message-label">正在生成 · 尚未确认</div><p id="pending-text"></p></section>
+      <form id="composer" class="composer"><label for="prompt" class="sr-only">你的问题</label><textarea id="prompt" rows="3" maxlength="16000" placeholder="问一个问题，或接着聊聊…" disabled></textarea><div class="composer-footer"><div class="budget"><label for="tokens">回答长度</label><select id="tokens"><option value="64">简短 · 64 tokens</option><option value="128">适中 · 128 tokens</option><option value="256">较长 · 256 tokens</option></select></div><button id="send" class="button primary" type="submit" disabled>发送 <span aria-hidden="true">↗</span></button></div></form>
+      <p class="footnote">Ctrl / ⌘ + Enter 发送 · 生成内容仅供参考 · 失败后不会自动重发</p>
+    </section>
+  </main>
+</body>
+</html>
