@@ -347,12 +347,20 @@ class HTTPProtocolTests(unittest.TestCase):
         body = self.chat_body()
         status, answer = self.request("POST", "/v1/chat", body)
         self.assertEqual(status, 200)
-        documents = [path.read_text(encoding="utf-8") for path in Path(self.temp.name).rglob("*.json")]
-        combined = "\n".join(documents)
-        self.assertTrue(documents)
-        self.assertIn(answer["request_id"], combined)
-        self.assertIn("你好", combined)
-        self.assertIn("response", combined)
+        # Receiving HTTP bytes can precede the handler's final delivered save.
+        self.assertTrue(self.service._gate.acquire(timeout=5), "request bookkeeping did not finish")
+        try:
+            documents = [path.read_text(encoding="utf-8") for path in Path(self.temp.name).rglob("*.json")]
+            saved = json.loads((Path(self.temp.name) / (answer["request_id"] + ".json")).read_text(encoding="utf-8"))
+            self.assertIs(saved["committed"], True)
+            self.assertIs(saved["delivered"], True)
+            combined = "\n".join(documents)
+            self.assertTrue(documents)
+            self.assertIn(answer["request_id"], combined)
+            self.assertIn("你好", combined)
+            self.assertIn("response", combined)
+        finally:
+            self.service._gate.release()
 
     def test_disconnect_fails_closed_without_history_commit(self):
         self.backend.mode = "disconnect"
