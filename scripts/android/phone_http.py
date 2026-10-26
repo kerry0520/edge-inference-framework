@@ -5,6 +5,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import secrets
+import socket
+import sys
 import threading
 import uuid
 
@@ -214,7 +216,7 @@ def make_server(service, host="127.0.0.1", port=0):
             if mutation and origins:
                 tokens = self.headers.get_all("X-Phone-CSRF", [])
                 if (len(tokens) != 1 or not secrets.compare_digest(
-                        tokens[0].encode("utf-8"), service.csrf_token.encode("ascii"))):
+                        tokens[0].encode("utf-8"), self.server.service.csrf_token.encode("ascii"))):
                     raise APIError(403, "csrf_rejected", "Refresh this page before submitting")
 
         def _asset(self):
@@ -245,7 +247,7 @@ def make_server(service, host="127.0.0.1", port=0):
             try:
                 self._origin()
                 if self.path == "/health":
-                    self._json(200, service.health())
+                    self._json(200, self.server.service.health())
                 else:
                     self._asset()
             except APIError as error:
@@ -304,7 +306,7 @@ def make_server(service, host="127.0.0.1", port=0):
                     except UnicodeError:
                         raise APIError(400, "invalid_request", "Prompt must contain valid Unicode")
                     streaming = body.get("stream", False)
-                service.run(body, reset, emit if streaming else None,
+                self.server.service.run(body, reset, emit if streaming else None,
                             None if streaming else lambda value: self._json(200, value))
             except APIError as error:
                 try:
@@ -317,7 +319,16 @@ def make_server(service, host="127.0.0.1", port=0):
             except OSError:
                 self.close_connection = True
 
-    server = ThreadingHTTPServer((host, port), Handler)
+    class LoopbackHTTPServer(ThreadingHTTPServer):
+        def server_bind(self):
+            if sys.platform == "win32":
+                # Windows SO_REUSEADDR permits another listener on this port.
+                self.allow_reuse_address = False
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            return super().server_bind()
+
+    server = LoopbackHTTPServer((host, port), Handler)
+    server.service = service
     server.daemon_threads = True
     return server
 
@@ -332,27 +343,33 @@ def main():
     parser.add_argument("--max-context-tokens", type=int, default=512)
     parser.add_argument("--record-dir", type=Path)
     args = parser.parse_args()
+    if not 0 <= args.port <= 65535:
+        parser.error("port must be 0..65535 (0 selects an available port)")
     from phone_http_backend import PhoneBackend
     directory = args.record_dir or Path("results/android/http-service-20261020/sessions") / uuid.uuid4().hex
-    backend = PhoneBackend(serial=args.serial, profile_path=args.plan_profile,
-                           adb_path=args.adb_path, max_context_tokens=args.max_context_tokens,
-                           record_parent=directory / "native", model_profile=args.model_profile)
-    service = server = None
+    backend = service = server = None
     try:
+        # Keep the actual listener reserved throughout backend startup.
+        server = make_server(None, port=args.port)
+        backend = PhoneBackend(serial=args.serial, profile_path=args.plan_profile,
+                               adb_path=args.adb_path, max_context_tokens=args.max_context_tokens,
+                               record_parent=directory / "native", model_profile=args.model_profile)
         backend.start()
         service = HTTPService(backend, directory / "http")
-        server = make_server(service, port=args.port)
+        server.service = service
         print(f"Phone HTTP ready: http://127.0.0.1:{server.server_port}", flush=True)
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
-        if server:
-            server.server_close()
-        if service:
-            service.close()
-        else:
-            backend.close()
+        try:
+            if server:
+                server.server_close()
+        finally:
+            if service:
+                service.close()
+            elif backend:
+                backend.close()
 
 
 if __name__ == "__main__":
