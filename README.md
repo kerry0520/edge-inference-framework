@@ -1,6 +1,6 @@
 # Edge Inference Framework
 
-**2026-10-29阶段交付**：CLI/HTTP现在可用`--list-models`发现、`--model qwen3-0.6b`或`--model qwen3-1.7b`选择已有部署组合，见[统一模型选择](docs/统一模型选择与已有部署.md)。需要既有Mi11、已配对ADB及匹配资源；仓库不分发模型或原生程序。两模型selector→Session会话验收已完成，新HTTP选择路径的实机端到端验收仍待。公开源码组合的离线验收与托管CI分别记录。
+**2026-10-29阶段交付**：CLI/HTTP现在可用`--list-models`发现、`--model qwen3-0.6b`或`--model qwen3-1.7b`选择已有部署组合，见[统一模型选择](docs/统一模型选择与已有部署.md)。需要既有Mi11、已配对ADB及匹配资源；仓库不分发模型或原生程序。两模型selector→Session、实际CLI短题与HTTP/SSE问答/拒绝/new/清理验收已完成；本批无新性能或浏览器UI结论。公开源码组合的离线验收与托管CI分别记录。
 
 **Prefill候选范围**：另已向MNN提交[PR #5066](https://github.com/alibaba/MNN/pull/5066)，在固定Mi11/0.6B/CPU单线程、chunk32、生成3 token场景观察到33/65输入暖完整请求耗时下降5.69%/4.71%。该候选与本仓库历史worker路径分别管理，本次模型选择不会自动启用它；不推断1.7B或其它设备收益。历史交付记录见[阶段交付与网页入口](docs/阶段交付与网页入口-20261026.md)。
 
@@ -80,6 +80,10 @@ python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 ```
 
 历史可选统计/KV实验仍可用`phone_chat.py --stats --mode kv`，它与`--model`互斥，不作为当前主要启动示例。更多运行约束见 `docs/Android项目快速开始.md`。`query` 和观测/原型工具属于实验路径，不是正式聊天默认行为。
+
+## 只读解释KV记录
+
+已有Session可用 `python scripts/android/summarize_phone_kv_record.py PATH_TO_SESSION_JSON --output-dir NEW_DIRECTORY` 生成分类摘要，不连接手机、不重发问题、不改原件。它区分实际复用、原因未观测、预算拒绝和未知结果，不把日志摘要当native KV正确性证明，见[KV复用记录怎么看](docs/KV复用记录怎么看.md)。
 
 ## 如何读实验结论
 
