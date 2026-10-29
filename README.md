@@ -6,7 +6,7 @@
 
 基于 **MNN 3.6.1 + Android ARM64 CPU** 的端侧 LLM 推理工程：C++ 手机推理 worker、Python 流式聊天客户端、KV 复用、请求统计，以及模型执行计划优化原型。
 
-验证设备为小米 11，模型为 Qwen3-0.6B 的 MNN 量化版本。模型计算在手机进行，电脑负责请求、显示和记录。本项目使用 MNN 作为底层推理引擎，并非从零重写 MNN。
+验证设备为小米 11，已有 Qwen3-0.6B/1.7B 的固定 MNN 量化资源组合。模型计算在手机进行，电脑负责请求、显示和记录。本项目使用 MNN 作为底层推理引擎，并非从零重写 MNN。
 
 ## 当前能力
 
@@ -17,7 +17,7 @@
 - 实际算子、W4/W8 计算路径和执行准备/并行区域观察。
 - 实验原型：非末 prefill 块以 `hidden_states` 为输出，保留全部 Transformer/Attention，省掉词表投影。
 
-**执行计划优化状态（2026-10-15）**：限定CPU配置的主干计划生命周期、完整logits与成本验收完成后，现已接入显式可选聊天入口 `--mode full --stats --prefill-plan-cache`。自然六轮开关配对的输入/回答一致，/new、短输入与预算拒绝保留计划，真实CLI自动发现/流式输出/正常退出通过；默认入口不启用。新入口完整重算消息历史的KV，执行计划另行复用，总部署预算512token。之前四进程组合性能对照33/128/512均值改善6.14%/1.88%/4.33%，128范围重叠且不能归因缓存单项，采样峰值RSS冷/暖增加8.48/9.02MiB；本次入口回归不新增速度结论。
+**执行计划优化状态（2026-10-15）**：限定CPU配置的主干计划生命周期、完整logits与成本验收完成后，现已接入显式可选聊天入口 `--mode full --stats --prefill-plan-cache`。自然六轮开关配对的输入/回答一致，/new、短输入与预算拒绝保留计划，真实CLI自动发现/流式输出/正常退出通过；无`--model`的旧CLI默认入口不启用该计划；显式`--model qwen3-0.6b`与HTTP默认沿用历史PlanCacheSession，1.7B关闭该计划。这里均不代表启用上游PR #5066。新入口完整重算消息历史的KV，执行计划另行复用，总部署预算512token。之前四进程组合性能对照33/128/512均值改善6.14%/1.88%/4.33%，128范围重叠且不能归因缓存单项，采样峰值RSS冷/暖增加8.48/9.02MiB；本次入口回归不新增速度结论。
 
 ## 主要入口
 
@@ -62,10 +62,13 @@ GitHub Actions在Windows/Linux的Python3.11运行全部公开离线测试，显�
 
 本仓库提供代码和阶段说明，**不包含模型权重、NDK/ADB、MNN 编译产物或手机缓存**。
 
-手机运行需要 Python 3.11、已配对 ADB、Android ARM64 设备、Qwen3-0.6B MNN 模型，以及与当前源码匹配的固定 MNN 构建。历史已配置项目目录的入口（新的独立包使用上面的显式profile方式）：
+手机运行需要 Python 3.11、已配对 ADB、已验Mi11设备、对应Qwen3固定MNN模型资源，以及与当前源码匹配的固定MNN构建。先按[已有组合接入示例与兼容矩阵](docs/已有模型接入示例与兼容矩阵.md)核对资源；在已配置的项目根目录执行：
 
 ```powershell
-python scripts/android/phone_chat.py --stats --mode kv
+python scripts/android/phone_chat.py --list-models
+python scripts/android/phone_chat.py --model qwen3-0.6b
+# 切换已有1.7B组合前，先退出上一会话
+python scripts/android/phone_chat.py --model qwen3-1.7b
 ```
 
 当前脚本保留了已验收设备与资产身份约束，并有历史构建目录依赖；不是任意新电脑/任意手机 clone 后即可运行的一键安装包。已补固定配方构建与已验资产导出；任意新构建准入和新电脑从零复现仍需独立验证。不要用未匹配库替换固定构建后沿用已有验收结论。
@@ -76,7 +79,7 @@ python scripts/android/phone_chat.py --stats --mode kv
 python -m unittest discover -s tests/android -p "test_phone_chat_metrics.py"
 ```
 
-更多运行约束见 `docs/Android项目快速开始.md`。`query` 和观测/原型工具属于实验路径，不是正式聊天默认行为。
+历史可选统计/KV实验仍可用`phone_chat.py --stats --mode kv`，它与`--model`互斥，不作为当前主要启动示例。更多运行约束见 `docs/Android项目快速开始.md`。`query` 和观测/原型工具属于实验路径，不是正式聊天默认行为。
 
 ## 如何读实验结论
 
