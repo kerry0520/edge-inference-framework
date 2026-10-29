@@ -24,6 +24,25 @@ def fixture():
 
 
 class KVSummaryTests(unittest.TestCase):
+    def test_recorded_bound_has_no_full_block(self):
+        for bound, expected in [(0, True), (29, True), (31, True), (32, False), (33, False)]:
+            with self.subTest(bound=bound):
+                record = fixture()
+                record["requests"][0]["response"].update(
+                    before_all_seq=bound, prompt_tokens=65, reused_tokens=0)
+                event = summary.summarize_record(record)["events"][0]
+                self.assertEqual(event["recorded_bound_has_no_full_block"], expected)
+                self.assertEqual(event["classification"], "zero_reuse_reason_unobserved")
+                self.assertFalse(event["computed_prefix_verified"])
+        record = fixture()
+        record.pop("history_mode")
+        record["requests"][0]["response"].pop("history_mode")
+        self.assertIsNone(summary.summarize_record(record)["events"][0]["recorded_bound_has_no_full_block"])
+        record = fixture()
+        record["requests"][0]["response"]["before_all_seq"] = True
+        with self.assertRaises(ValueError):
+            summary.summarize_record(record)
+
     def test_explicit_policy_and_zero_unknown(self):
         record = fixture()
         self.assertEqual(summary.summarize_record(record)["events"][0]["classification"], "positive_reuse")

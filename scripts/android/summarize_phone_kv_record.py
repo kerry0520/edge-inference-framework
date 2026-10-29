@@ -153,6 +153,10 @@ def summarize_record(record):
                  "reset_context_confirmed": reset_confirmed, "preceding_confirmed_new_index": relation,
                  "reset_cause": "unobserved", "computed_prefix_verified": False,
                  "input_ids_present": "full_input_ids" in response}
+        # This is a consequence of the validated recorded upper bound, not
+        # a snapshot of the engine's actual prefix or decision branch.
+        event["recorded_bound_has_no_full_block"] = (
+            response["before_all_seq"] < 32 if policy == "kv_block32" else None)
         if "full_input_ids" in response:
             event["input_ids_diagnostic"] = "Presence only; ID contents/length and numerical outputs were not verified."
         if classification == "zero_reuse_reason_unobserved":

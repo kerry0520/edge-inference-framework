@@ -14,6 +14,8 @@
 
 如果143个token全都重新prefill，复用0，可能因为没有旧上下文、匹配前缀不足一块、执行资格不满足，或其它引擎决策。现有普通final没有精确原因，摘要写`zero_reuse_reason_unobserved`。它不能靠猜测生成“前缀失配”结论，也不能证明每层KV内容正确。
 
+固定32块路径已校验复用数是32的倍数且不超过`before_all_seq`。例如记录上限为29时，摘要的`recorded_bound_has_no_full_block`为true，表示按记录约束不可能复用完整块。这不是引擎具体分支或已forward前缀的证明；32及以上为false只表示上限不排除复用，其他策略为null。
+
 本次完整`full_input_ids`只说明本次模板输入是什么；它不是“上一题已forward过的token前缀”快照。生成出的EOS也未必进入过下一次forward。这部分需要引擎实际决策点的独立证据，当前摘要一律标`computed_prefix_verified=false`。
 
 ## 拒绝、new和未知请求不能算成命中失败
