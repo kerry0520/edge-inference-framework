@@ -335,6 +335,8 @@ def make_server(service, host="127.0.0.1", port=0):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model", help="Registered deployment key; use --list-models")
+    parser.add_argument("--list-models", action="store_true", help="List known deployments without connecting")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--serial")
     parser.add_argument("--plan-profile")
@@ -343,6 +345,18 @@ def main():
     parser.add_argument("--max-context-tokens", type=int, default=512)
     parser.add_argument("--record-dir", type=Path)
     args = parser.parse_args()
+    if args.list_models:
+        from phone_model_catalog import list_models
+        print(json.dumps(list_models(), ensure_ascii=False, indent=2))
+        return 0
+    if args.model is not None:
+        from phone_model_catalog import selection
+        try:
+            selection(args.model)
+            if args.model_profile is not None:
+                raise ValueError("--model and --model-profile are mutually exclusive")
+        except ValueError as error:
+            parser.error(str(error))
     if not 0 <= args.port <= 65535:
         parser.error("port must be 0..65535 (0 selects an available port)")
     from phone_http_backend import PhoneBackend
@@ -351,9 +365,10 @@ def main():
     try:
         # Keep the actual listener reserved throughout backend startup.
         server = make_server(None, port=args.port)
+        model_arguments = {"model": args.model} if args.model is not None else {}
         backend = PhoneBackend(serial=args.serial, profile_path=args.plan_profile,
                                adb_path=args.adb_path, max_context_tokens=args.max_context_tokens,
-                               record_parent=directory / "native", model_profile=args.model_profile)
+                               record_parent=directory / "native", model_profile=args.model_profile, **model_arguments)
         backend.start()
         service = HTTPService(backend, directory / "http")
         server.service = service

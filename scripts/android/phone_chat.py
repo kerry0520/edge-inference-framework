@@ -6,6 +6,8 @@ import sys
 
 def main():
     parser = argparse.ArgumentParser(description="手机多轮流式聊天：默认完整历史重算，可选择KV复用模式。")
+    parser.add_argument("--model", help="Registered deployment key; uses existing full-history session policy")
+    parser.add_argument("--list-models", action="store_true", help="List known deployments without connecting")
     parser.add_argument("--mode", choices=("full", "kv", "query"), default="full",
                         help="full为默认；kv为固定32分块；query为本机候选实验入口，仅限固定Mi11/Qwen3-0.6B配置，待核对原版输出差异")
     parser.add_argument("--stats", action="store_true", help="启用逐轮token与原生prefill/decode统计（full或kv）")
@@ -19,6 +21,41 @@ def main():
     parser.add_argument("--max-context-tokens", type=int, default=None,
                         help="部署输入+生成token预算，不代表模型最大上下文")
     args = parser.parse_args()
+    if args.list_models:
+        import json
+        from phone_model_catalog import list_models
+        print(json.dumps(list_models(), ensure_ascii=False, indent=2))
+        return 0
+    if args.model is not None:
+        from phone_model_catalog import selection
+        try:
+            spec, factory, selected_arguments = selection(args.model)
+        except ValueError as error:
+            parser.error(str(error))
+        if (args.mode != "full" or args.stats or args.stats_build_tag is not None or
+                args.prefill_plan_cache or args.plan_profile is not None or args.adb_path is not None):
+            parser.error("--model selects a registered full-history policy; do not combine mode/stats/plan overrides")
+        budget = 512 if args.max_context_tokens is None else args.max_context_tokens
+        if not 1 <= budget <= spec["max_context_tokens"]:
+            parser.error("registered deployment token budget is 1..512")
+        if not 1 <= args.max_new_tokens <= 512:
+            parser.error("max-new-tokens为1..512")
+        full = importlib.import_module("phone_chat_session")
+        def selected_session(serial=None, **kwargs):
+            return factory(serial=serial, **selected_arguments, **kwargs)
+        forwarded = [full.__file__, "--max-new-tokens", str(args.max_new_tokens),
+                     "--max-context-tokens", str(budget)]
+        if args.serial is not None:
+            forwarded += ["--serial", args.serial]
+        if args.prompt is not None:
+            forwarded += ["--prompt", args.prompt]
+        original = sys.argv
+        try:
+            sys.argv = forwarded
+            return full.main(session_type=selected_session,
+                loaded_message="模型已加载：" + spec["name"] + "；完整历史重算，/new、/history、/exit。")
+        finally:
+            sys.argv = original
     if args.plan_profile is not None and not args.prefill_plan_cache:
         parser.error("--plan-profile需要--prefill-plan-cache --mode full --stats")
     if args.adb_path is not None and args.plan_profile is None:

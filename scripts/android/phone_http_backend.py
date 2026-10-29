@@ -14,7 +14,18 @@ from phone_chat_session import ContextBudgetExceeded
 class PhoneBackend:
     def __init__(self, serial=None, profile_path=None, adb_path=None,
                  max_context_tokens=512, record_parent=None, session_factory=None,
-                 model_profile=None):
+                 model_profile=None, model=None):
+        selected = None
+        if model is not None:
+            if model_profile is not None:
+                raise ValueError("--model and --model-profile are mutually exclusive")
+            from phone_model_catalog import selection
+            selected, selected_factory, selected_arguments = selection(model)
+            if selected_arguments and (profile_path is not None or adb_path is not None):
+                raise ValueError("Registered larger model cannot override native build or ADB")
+            if session_factory is None:
+                session_factory = selected_factory
+            model_profile = selected_arguments.get("model_profile")
         if model_profile is not None and (profile_path is not None or adb_path is not None):
             raise ValueError("A model profile uses the fixed native build, without plan/ADB overrides")
         if model_profile is not None and session_factory is None:
@@ -26,7 +37,7 @@ class PhoneBackend:
                                record_parent=record_parent)
         if model_profile is not None:
             self._arguments["model_profile"] = model_profile
-        self._model_name = "Qwen3-0.6B" if model_profile is None else "Qwen3-1.7B"
+        self._model_name = selected["name"] if selected else ("Qwen3-0.6B" if model_profile is None else "Qwen3-1.7B")
         self._session = None
         self._state = "not_started"
         self._interrupted = False
