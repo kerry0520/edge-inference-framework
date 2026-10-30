@@ -1,0 +1,611 @@
+{
+  "scope": "Qwen3-0.6B Mi11 CPU1/low chunk32 fixed natural-token-prefix benchmark",
+  "PR": {
+    "url": "https://github.com/alibaba/MNN/pull/5066",
+    "head": "70c4e2171550dfd68850dfb77385966b142879b7"
+  },
+  "qualification": {
+    "processes": 6,
+    "requests": 24,
+    "full_f32_cross_flag_pairs": 12,
+    "check_count": 567
+  },
+  "formal": {
+    "processes": 12,
+    "requests": 48,
+    "generation_tokens": 3,
+    "max_all_tokens": 1024,
+    "order": "128ABBA/256BAAB/512ABBA",
+    "warm_estimator": "median last3requests within each process; median two independent process medians per flag/cell",
+    "correctness": "All48 requests tokens/text/public state checked against same-flag fresh qualification reference; final complete-f32 checked only request4 in each process,12 full-f32 comparisons.",
+    "metric_excludes": "Caller reset, tokenizer, output dumps, HTTP/ADB transport; load+first is not end-to-end startup."
+  },
+  "identity": {
+    "runner_sha256": "39f5d5c8c5fad5a19ac6be0addb6bb6223a14e9fa09edc75be6f09c5f2676614",
+    "library_sha256": "ea9da6410191748d975e72ed96a422df11e82089c666a03bac85f972ce3f4052",
+    "protocol_sha256": "f374c37383f0606bd9da549680613a641ce4bb83f7202700aec54f75591c8014",
+    "resource_manifest_sha256": "0de5fe1e6500c1364456ccbac6eb0b7549e2032f19eb194f5fe41bbef4a59601",
+    "fixture_provenance_sha256": "5fddc59dc9273aab90cee57a442c23df96789c70fe281eac37a679dcdbbd87d1",
+    "fixtures_sha256": {
+      "128": "a89156c37deb23a11e6b32fa70fb003fad8a7a0850351b98944e6d073c671220",
+      "256": "307735a8961d1706418600eacaa1344ba43523a881a5afc12c897a82dc2da0c2",
+      "512": "e91cd1f0228dd0ef200674944c9ab16f4efdb75ce15247fe061f45850e2887ae"
+    }
+  },
+  "measured_source_hashes": {
+    "express/module/Module.cpp": "25c0ac0f5513a975fa81da09e4291e52646377f5fe8a1ef35a36871273cd30f4",
+    "express/module/PipelineModule.cpp": "1bd652bd48781176953ca0e2f65260ff58dbb74f78c93bc762131bfa3f8ff6db",
+    "express/module/PipelineModule.hpp": "83639b95a700077343d7633f93fe47a4296c079fe5ab3f77a9adaa82fa9a96d0",
+    "express/module/StaticModule.cpp": "afe33129166c85df100e92ad852f3602d80edb3c39e0890611ae2830ea194a64",
+    "express/module/StaticModule.hpp": "b11781ccb1266b566ff8c053d1d2b498ed3ce90892ea9d2681b359c5efb0b15d",
+    "transformers/llm/engine/src/llm.cpp": "9b903033b0f92b252ad5d667bf650d39b8bb98b84451e9cfcb88fbf192b38c96",
+    "transformers/llm/engine/src/speculative_decoding/generate.hpp": "65c4d0968656a685e9c9567ac097094e0ef1ebe511bac49c0c3f160f5a1e2492",
+    "source/core/SharedAttentionModule.hpp": "b5b42912e2a1b77b664c0b8edda896d3f6302ed6a5462f23034ec129e6178e2a"
+  },
+  "binary_limit": "New long-input harness linked against measured v5 archive; reviewed production-token equivalence to current PRv6; not a measurement of the exact PR-head ELF.",
+  "thermal_protocol": {
+    "start_cpuss_C": [
+      31,
+      40
+    ],
+    "start_battery_C": [
+      29,
+      33
+    ],
+    "end_cpuss_max_C": 55,
+    "prior_failed_protocol_end_max_C": 50,
+    "prior_failure_end_C": 51.4,
+    "revision_before_current_long_speed_inspection": true,
+    "all_new_qualification_and_formal_processes": true,
+    "no_further_relaxation": true,
+    "interpretation": "Operational admission bound, not a safety or no-throttling proof."
+  },
+  "cells": [
+    {
+      "input_tokens": 128,
+      "chunks": 4,
+      "off_warm_ms": 944.636953,
+      "on_warm_ms": 933.6936195,
+      "reduction_percent": 1.1584697661091825,
+      "pairs": [
+        {
+          "A_index": 0,
+          "B_index": 1,
+          "reduction_percent": 1.2908993922188805
+        },
+        {
+          "A_index": 3,
+          "B_index": 2,
+          "reduction_percent": 1.0259595712663216
+        }
+      ]
+    },
+    {
+      "input_tokens": 256,
+      "chunks": 8,
+      "off_warm_ms": 1875.953827,
+      "on_warm_ms": 1844.9790355,
+      "reduction_percent": 1.6511489277715619,
+      "pairs": [
+        {
+          "A_index": 5,
+          "B_index": 4,
+          "reduction_percent": 1.834165143893507
+        },
+        {
+          "A_index": 6,
+          "B_index": 7,
+          "reduction_percent": 1.4683195383485614
+        }
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "chunks": 16,
+      "off_warm_ms": 3938.778306,
+      "on_warm_ms": 3840.6259625,
+      "reduction_percent": 2.491948921077458,
+      "pairs": [
+        {
+          "A_index": 8,
+          "B_index": 9,
+          "reduction_percent": 1.7162668790315139
+        },
+        {
+          "A_index": 11,
+          "B_index": 10,
+          "reduction_percent": 3.2494840199280395
+        }
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "index": 0,
+      "input_tokens": 128,
+      "variant": "A",
+      "load_ms": 950.415677,
+      "response_ms": [
+        959.465156,
+        939.872604,
+        944.924219,
+        945.203229
+      ],
+      "warm_median_ms": 944.924219,
+      "load_plus_first_ms": 1909.880833,
+      "before_cpuss_C": 36.2,
+      "after_cpuss_C": 48.1,
+      "before_battery_C": 32.0,
+      "after_battery_C": 31.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 1,
+      "input_tokens": 128,
+      "variant": "B",
+      "load_ms": 980.306354,
+      "response_ms": [
+        960.77349,
+        931.711719,
+        934.964531,
+        932.726198
+      ],
+      "warm_median_ms": 932.726198,
+      "load_plus_first_ms": 1941.079844,
+      "before_cpuss_C": 34.2,
+      "after_cpuss_C": 47.4,
+      "before_battery_C": 31.0,
+      "after_battery_C": 31.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 2,
+      "input_tokens": 128,
+      "variant": "B",
+      "load_ms": 980.2975,
+      "response_ms": [
+        962.213281,
+        934.476041,
+        934.661041,
+        935.935885
+      ],
+      "warm_median_ms": 934.661041,
+      "load_plus_first_ms": 1942.510781,
+      "before_cpuss_C": 34.2,
+      "after_cpuss_C": 47.1,
+      "before_battery_C": 32.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 3,
+      "input_tokens": 128,
+      "variant": "A",
+      "load_ms": 962.496406,
+      "response_ms": [
+        981.355313,
+        953.220312,
+        944.349687,
+        940.108437
+      ],
+      "warm_median_ms": 944.349687,
+      "load_plus_first_ms": 1943.851719,
+      "before_cpuss_C": 34.8,
+      "after_cpuss_C": 49.1,
+      "before_battery_C": 31.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 4,
+      "input_tokens": 256,
+      "variant": "B",
+      "load_ms": 989.459792,
+      "response_ms": [
+        1866.503905,
+        1837.968958,
+        1840.813072,
+        1840.605312
+      ],
+      "warm_median_ms": 1840.605312,
+      "load_plus_first_ms": 2855.963697,
+      "before_cpuss_C": 34.2,
+      "after_cpuss_C": 49.8,
+      "before_battery_C": 32.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 5,
+      "input_tokens": 256,
+      "variant": "A",
+      "load_ms": 961.759583,
+      "response_ms": [
+        1903.898697,
+        1874.995832,
+        1875.150468,
+        1873.458437
+      ],
+      "warm_median_ms": 1874.995832,
+      "load_plus_first_ms": 2865.65828,
+      "before_cpuss_C": 34.5,
+      "after_cpuss_C": 50.8,
+      "before_battery_C": 32.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 6,
+      "input_tokens": 256,
+      "variant": "A",
+      "load_ms": 955.773853,
+      "response_ms": [
+        1892.301822,
+        1875.193489,
+        1881.305312,
+        1876.911822
+      ],
+      "warm_median_ms": 1876.911822,
+      "load_plus_first_ms": 2848.075675,
+      "before_cpuss_C": 36.5,
+      "after_cpuss_C": 51.8,
+      "before_battery_C": 32.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 7,
+      "input_tokens": 256,
+      "variant": "B",
+      "load_ms": 969.083541,
+      "response_ms": [
+        1862.723906,
+        1834.148437,
+        1849.352759,
+        1855.009947
+      ],
+      "warm_median_ms": 1849.352759,
+      "load_plus_first_ms": 2831.807447,
+      "before_cpuss_C": 35.5,
+      "after_cpuss_C": 50.8,
+      "before_battery_C": 32.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 8,
+      "input_tokens": 512,
+      "variant": "A",
+      "load_ms": 954.675937,
+      "response_ms": [
+        3898.429686,
+        3871.048697,
+        3892.159478,
+        3976.647759
+      ],
+      "warm_median_ms": 3892.159478,
+      "load_plus_first_ms": 4853.105623,
+      "before_cpuss_C": 35.2,
+      "after_cpuss_C": 53.8,
+      "before_battery_C": 32.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 9,
+      "input_tokens": 512,
+      "variant": "B",
+      "load_ms": 914.527239,
+      "response_ms": [
+        3854.683228,
+        3825.359634,
+        3787.521769,
+        3868.856457
+      ],
+      "warm_median_ms": 3825.359634,
+      "load_plus_first_ms": 4769.210467,
+      "before_cpuss_C": 37.1,
+      "after_cpuss_C": 53.8,
+      "before_battery_C": 32.0,
+      "after_battery_C": 32.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 10,
+      "input_tokens": 512,
+      "variant": "B",
+      "load_ms": 986.79052,
+      "response_ms": [
+        3864.735311,
+        3855.892291,
+        3809.296613,
+        3875.492759
+      ],
+      "warm_median_ms": 3855.892291,
+      "load_plus_first_ms": 4851.525831,
+      "before_cpuss_C": 36.2,
+      "after_cpuss_C": 52.8,
+      "before_battery_C": 32.0,
+      "after_battery_C": 33.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    },
+    {
+      "index": 11,
+      "input_tokens": 512,
+      "variant": "A",
+      "load_ms": 951.233749,
+      "response_ms": [
+        3918.847186,
+        3891.339009,
+        3985.397134,
+        4035.528644
+      ],
+      "warm_median_ms": 3985.397134,
+      "load_plus_first_ms": 4870.080935,
+      "before_cpuss_C": 36.5,
+      "after_cpuss_C": 54.4,
+      "before_battery_C": 33.0,
+      "after_battery_C": 33.0,
+      "before_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      },
+      "after_governor_caps": {
+        "policy0/scaling_governor": "schedutil",
+        "policy0/scaling_min_freq": "691200",
+        "policy0/scaling_max_freq": "1804800",
+        "policy4/scaling_governor": "schedutil",
+        "policy4/scaling_min_freq": "710400",
+        "policy4/scaling_max_freq": "2227200",
+        "policy7/scaling_governor": "schedutil",
+        "policy7/scaling_min_freq": "844800",
+        "policy7/scaling_max_freq": "2496000"
+      }
+    }
+  ],
+  "limitations": [
+    "One model, one phone, three fixed prefixes of one natural technical passage; four repeated requests per process, each logically reset.",
+    "Three generation steps only; prefill-dominated complete response+final mapping/wait metric, not isolated prefill or long decode.",
+    "Descriptive medians and every pair retained; no statistical significance or all-hardware/model claim.",
+    "V1 thermal failure retained, no V1 samples pooled; qualification timings excluded."
+  ],
+  "cold_interpretation": "Load plus first response did not improve in every pair; no uniform cold-start speedup claim."
+}
